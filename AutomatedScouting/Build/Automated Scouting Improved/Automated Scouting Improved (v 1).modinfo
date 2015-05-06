@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Mod id="a08c929a-fa8f-4584-958a-13722781389b" version="1">
+  <Properties>
+    <Name>Automated Scouting Improved</Name>
+    <Stability>Alpha</Stability>
+    <Teaser>Improves automated Scounting</Teaser>
+    <Description>Improves automated Scounting</Description>
+    <Authors>josh</Authors>
+    <HideSetupGame>0</HideSetupGame>
+    <AffectsSavedGames>1</AffectsSavedGames>
+    <MinCompatibleSaveVersion>0</MinCompatibleSaveVersion>
+    <SupportsSinglePlayer>1</SupportsSinglePlayer>
+    <SupportsMultiplayer>1</SupportsMultiplayer>
+    <SupportsHotSeat>1</SupportsHotSeat>
+    <SupportsMac>1</SupportsMac>
+    <ReloadAudioSystem>0</ReloadAudioSystem>
+    <ReloadLandmarkSystem>0</ReloadLandmarkSystem>
+    <ReloadStrategicViewSystem>0</ReloadStrategicViewSystem>
+    <ReloadUnitSystem>0</ReloadUnitSystem>
+  </Properties>
+  <Dependencies />
+  <References />
+  <Blocks />
+  <Files>
+    <File md5="90CD4BEB1BC3FD32CDE30DF1F0A41A25" import="1">CvGameCoreDLLFinal Release.dll</File>
+  </Files>
+</Mod>

@@ -1,0 +1,2 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<DEFECTS><DEFECT><SFA><FILEPATH>c:\users\josh\documents\visual studio 2008\projects\cvgamecoresource\cvgamecoredll_expansion2\</FILEPATH><FILENAME>cvmap.cpp</FILENAME><LINE>445</LINE><COLUMN>13</COLUMN></SFA><DEFECTCODE>6031</DEFECTCODE><DESCRIPTION>Return value ignored: 'CoCreateGuid'.</DESCRIPTION><FUNCTION>CvMap::reset</FUNCTION><DECORATED>?reset@CvMap@@QAEXPAUCvMapInitData@@@Z</DECORATED><FUNCLINE>402</FUNCLINE><PATH/></DEFECT></DEFECTS>
