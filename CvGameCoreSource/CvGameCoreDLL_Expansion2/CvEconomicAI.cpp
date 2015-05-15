@@ -1000,8 +1000,8 @@ void CvEconomicAI::ClearUnitTargetGoodyStepPlot(CvUnit* pUnit)
 
 //JR_MODS
 //	---------------------------------------------------------------------------
-// returns the number of expected uncovered plots
-// assume flat plains perfect vision = radius of 2
+// returns the number of uncovered plots
+// assume flat plains perfect vision = radius of 2, i range is sight
 int CvEconomicAI::ScoreExplorePlotGreedy(CvPlot* pPlot, TeamTypes eTeam, int iRange, DomainTypes eDomainType)
 {
 	int value  = 0;
@@ -1027,46 +1027,10 @@ int CvEconomicAI::ScoreExplorePlotGreedy(CvPlot* pPlot, TeamTypes eTeam, int iRa
 			{
 				continue;
 			}
-			if(pEvalPlot->isAdjacentRevealed(eTeam))
+			if(pPlot->canSeePlot(pEvalPlot, eTeam, iRange, NO_DIRECTION))
 			{
-				if(plotDistance(iPlotX, iPlotY, pEvalPlot->getX(), pEvalPlot->getY()) > 1)
-				{
-					CvPlot* pAdjacentPlot;
-					bool bViewBlocked = true;
-					for(int i = 0; i < NUM_DIRECTION_TYPES; ++i)
-					{
-						pAdjacentPlot = plotDirection(pEvalPlot->getX(), pEvalPlot->getY(), ((DirectionTypes)i));
-						if(pAdjacentPlot != NULL)
-						{
-							if(pAdjacentPlot->isRevealed(eTeam))
-							{
-								int iDistance = plotDistance(iPlotX, iPlotY, pAdjacentPlot->getX(), pAdjacentPlot->getY());
-								if(iDistance > iRange)
-								{
-									continue;
-								}
-
-								// this cheats, because we can't be sure that between the target and the viewer
-								if(pPlot->canSeePlot(pEvalPlot, eTeam, iRange, NO_DIRECTION))
-								{
-									bViewBlocked = false;
-								}
-
-								if(!bViewBlocked)
-								{
-									break;
-								}
-							}
-						}
-					}
-
-					if(bViewBlocked)
-					{
-						continue;
-					}
-				}
+				value++;
 			}
-			value++;
 		}
 	}
 	return value;

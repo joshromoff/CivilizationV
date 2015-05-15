@@ -2181,83 +2181,85 @@ void CvHomelandAI::ExecuteExplorerMoves()
 
 		CvPlot* pkStepPlot = NULL;
 		CvPlot* pGoodyPlot = pEconomicAI->GetUnitTargetGoodyPlot(pUnit.pointer(), &pkStepPlot);
-		if (pGoodyPlot)
+//JR_MODS
+#if defined(JR_DLL)
+		if(!pUnit->GetAutomateToggle())
 		{
-			if(GC.getLogging() && GC.getAILogging())
+#endif
+			if (pGoodyPlot)
 			{
-				CvString strLogString;
-				strLogString.Format("UnitID: %d has goody target, X: %d, Y: %d", pUnit->GetID(), pGoodyPlot->getX(), pGoodyPlot->getY());
-				LogHomelandMessage(strLogString);
-			}
-		}
-
-		if(pGoodyPlot && (pGoodyPlot->isGoody(m_pPlayer->getTeam()) || (pGoodyPlot->HasBarbarianCamp()) && !pGoodyPlot->isVisibleEnemyDefender(pUnit.pointer())))
-		{
-			bool bCanFindPath = false;
-			if (pkStepPlot)	// Do we already have our first step point?
-			{
-				if (IsValidExplorerEndTurnPlot(pUnit.pointer(), pkStepPlot))
-					bCanFindPath = true;
-
-				// The economic AI should recalculate next time through, but just in case, let's say that we've used the step plot
-				pEconomicAI->ClearUnitTargetGoodyStepPlot(pUnit.pointer());
-			}
-
-			if (!pkStepPlot || !bCanFindPath)
-			{
-				bCanFindPath = kPathFinder.GenerateUnitPath(pUnit.pointer(), iUnitX, iUnitY, pGoodyPlot->getX(), pGoodyPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
-				if(bCanFindPath)
+				if(GC.getLogging() && GC.getAILogging())
 				{
-					pkStepPlot = kPathFinder.GetPathEndTurnPlot();
+					CvString strLogString;
+					strLogString.Format("UnitID: %d has goody target, X: %d, Y: %d", pUnit->GetID(), pGoodyPlot->getX(), pGoodyPlot->getY());
+					LogHomelandMessage(strLogString);
 				}
 			}
 
-			if (bCanFindPath)
+			if(pGoodyPlot && (pGoodyPlot->isGoody(m_pPlayer->getTeam()) || (pGoodyPlot->HasBarbarianCamp()) && !pGoodyPlot->isVisibleEnemyDefender(pUnit.pointer())))
 			{
-				if(pkStepPlot)
+				bool bCanFindPath = false;
+				if (pkStepPlot)	// Do we already have our first step point?
 				{
-					CvAssert(!pUnit->atPlot(*pkStepPlot));
-					if(GC.getLogging() && GC.getAILogging())
+					if (IsValidExplorerEndTurnPlot(pUnit.pointer(), pkStepPlot))
+						bCanFindPath = true;
+
+					// The economic AI should recalculate next time through, but just in case, let's say that we've used the step plot
+					pEconomicAI->ClearUnitTargetGoodyStepPlot(pUnit.pointer());
+				}
+
+				if (!pkStepPlot || !bCanFindPath)
+				{
+					bCanFindPath = kPathFinder.GenerateUnitPath(pUnit.pointer(), iUnitX, iUnitY, pGoodyPlot->getX(), pGoodyPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
+					if(bCanFindPath)
 					{
-						CvString strLogString;
-						strLogString.Format("UnitID: %d Moving to goody hut, X: %d, Y: %d, from X: %d Y: %d", pUnit->GetID(), pkStepPlot->getX(), pkStepPlot->getY(), pUnit->getX(), pUnit->getY());
-						LogHomelandMessage(strLogString);
+						pkStepPlot = kPathFinder.GetPathEndTurnPlot();
 					}
-//JR_MODS
-#if defined(JR_DLL)
-					if(!pUnit->GetAutomateToggle())
+				}
+
+				if (bCanFindPath)
+				{
+					if(pkStepPlot)
 					{
-#endif
-						pUnit->PushMission(CvTypes::getMISSION_MOVE_TO(), pkStepPlot->getX(), pkStepPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER, false, false, MISSIONAI_EXPLORE, pkStepPlot);
-						pUnit->finishMoves();
-						UnitProcessed(pUnit->GetID());
-#if defined(JR_DLL)
+						CvAssert(!pUnit->atPlot(*pkStepPlot));
+						if(GC.getLogging() && GC.getAILogging())
+						{
+							CvString strLogString;
+							strLogString.Format("UnitID: %d Moving to goody hut, X: %d, Y: %d, from X: %d Y: %d", pUnit->GetID(), pkStepPlot->getX(), pkStepPlot->getY(), pUnit->getX(), pUnit->getY());
+							LogHomelandMessage(strLogString);
+						}
+
+							pUnit->PushMission(CvTypes::getMISSION_MOVE_TO(), pkStepPlot->getX(), pkStepPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER, false, false, MISSIONAI_EXPLORE, pkStepPlot);
+							pUnit->finishMoves();
+							UnitProcessed(pUnit->GetID());
+	
 					}
-#endif
+					else
+					{
+						if(GC.getLogging() && GC.getAILogging())
+						{
+							CvString strLogString;
+							strLogString.Format("UnitID: %d No end turn plot to goody from, X: %d, Y: %d", pUnit->GetID(), pUnit->getX(), pUnit->getY());
+							LogHomelandMessage(strLogString);
+						}
+					}
+
+					continue;
+
 				}
 				else
 				{
 					if(GC.getLogging() && GC.getAILogging())
 					{
 						CvString strLogString;
-						strLogString.Format("UnitID: %d No end turn plot to goody from, X: %d, Y: %d", pUnit->GetID(), pUnit->getX(), pUnit->getY());
+						strLogString.Format("UnitID: %d Can't find path to goody from, X: %d, Y: %d", pUnit->GetID(), pUnit->getX(), pUnit->getY());
 						LogHomelandMessage(strLogString);
 					}
 				}
-
-				continue;
-
 			}
-			else
-			{
-				if(GC.getLogging() && GC.getAILogging())
-				{
-					CvString strLogString;
-					strLogString.Format("UnitID: %d Can't find path to goody from, X: %d, Y: %d", pUnit->GetID(), pUnit->getX(), pUnit->getY());
-					LogHomelandMessage(strLogString);
-				}
-			}
+#if defined(JR_DLL)
 		}
+#endif
 
 		CvPlot* pBestPlot = NULL;
 		int iBestPlotScore = 0;
