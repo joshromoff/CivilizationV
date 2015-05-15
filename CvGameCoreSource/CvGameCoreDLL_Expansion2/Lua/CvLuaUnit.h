@@ -223,6 +223,15 @@ protected:
 	static int lGetCaptureChance(lua_State* L);
 
 	static int lIsAutomated(lua_State* L);
+#if defined(JR_LUAAPI)
+	LUAAPIEXTN(SetToAutomate);
+//	static int lSetToAutomate(lua_State* L);
+	
+#endif
+#if defined(JR_LUAAPI)
+	LUAAPIEXTN(GetAutoToggle);
+	LUAAPIEXTN(GetScore);
+#endif
 	static int lIsWaiting(lua_State* L);
 	static int lIsFortifyable(lua_State* L);
 	static int lIsEverFortifyable(lua_State* L);

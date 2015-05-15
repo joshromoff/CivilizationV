@@ -216,6 +216,13 @@ void CvLuaUnit::PushMethods(lua_State* L, int t)
 	Method(GetCaptureChance);
 
 	Method(IsAutomated);
+#if defined(JR_LUAAPI)
+	Method(SetToAutomate);
+#endif
+#if defined(JR_LUAAPI)
+	Method(GetAutoToggle);
+	Method(GetScore);
+#endif
 	Method(IsWaiting);
 	Method(IsFortifyable);
 	Method(IsEverFortifyable);
@@ -2269,6 +2276,47 @@ int CvLuaUnit::lIsAutomated(lua_State* L)
 	lua_pushboolean(L, bResult);
 	return 1;
 }
+//------------------------------------------------------------------------------
+//void setToAutomate();
+#if defined(JR_LUAAPI)
+int CvLuaUnit::lSetToAutomate(lua_State* L)
+{
+	CvUnit* pkUnit = GetInstance(L);
+	const AutomateTypes eAutomate = (AutomateTypes)lua_tointeger(L, 2);
+	pkUnit->SetAutomateToggle();
+	pkUnit->SetAutomateType(eAutomate);
+	
+	
+	return 0;
+}
+#endif
+//------------------------------------------------------------------------------
+//bool getAutoToggle();
+#if defined(JR_LUAAPI)
+int CvLuaUnit::lGetAutoToggle(lua_State* L)
+{
+	CvUnit* pkUnit = GetInstance(L);
+	const bool bResult = pkUnit->GetAutomateToggle();
+
+	lua_pushboolean(L, bResult);
+	return 1;
+
+}
+#endif
+
+//------------------------------------------------------------------------------
+//int getScore();
+#if defined(JR_LUAAPI)
+int CvLuaUnit::lGetScore(lua_State* L)
+{
+	CvUnit* pkUnit = GetInstance(L);
+	const int iResult = pkUnit->GetJScore();
+
+	lua_pushinteger(L, iResult);
+	return 1;
+
+}
+#endif
 //------------------------------------------------------------------------------
 //bool isWaiting();
 int CvLuaUnit::lIsWaiting(lua_State* L)

@@ -164,12 +164,21 @@ public:
 	void DoTurn();
 
 	CvCity* GetBestGreatWorkCity(CvPlot *pStartPlot, GreatWorkType eGreatWork) const;
-
+//JR_MODS 
+#if defined(JR_DLL)
+	FFastVector<int>& GetJRExplorationPlots();
+	FFastVector<int>& GetJRExplorationPlotRatings();
+#endif
 	FFastVector<int>& GetExplorationPlots();
 	FFastVector<int>& GetExplorationPlotRatings();
 	FFastVector<int>& GetGoodyHutPlots();
 	CvPlot* GetUnitTargetGoodyPlot(CvUnit* pUnit, CvPlot** ppkStepPlot = NULL);
 	void ClearUnitTargetGoodyStepPlot(CvUnit* pUnit);
+
+//JR_MODS 
+#if defined(JR_DLL)
+	static int ScoreExplorePlotGreedy(CvPlot* pPlot, TeamTypes eTeam, int iRange, DomainTypes eDomainType);
+#endif
 
 	static int ScoreExplorePlot(CvPlot* pPlot, TeamTypes eTeam, int iRange, DomainTypes eDomainType);
 
@@ -264,6 +273,12 @@ private:
 	FFastVector<int> m_aiExplorationPlots;
 	FFastVector<int> m_aiExplorationPlotRatings;
 	FFastVector<int> m_aiGoodyHutPlots;
+	
+	//JR_MODS eploration
+#if defined(JR_DLL)
+	FFastVector<int> m_aiJRExplorationPlots;
+	FFastVector<int> m_aiJRExplorationPlotRatings;
+#endif
 	struct GoodyHutUnitAssignment
 	{
 		int m_iUnitID;				// The unit that is assigned.

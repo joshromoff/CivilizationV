@@ -910,7 +910,12 @@ void CvUnit::reset(int iID, UnitTypes eUnit, PlayerTypes eOwner, bool bConstruct
 	m_iMissionTimer = 0;
 	m_eActivityType = ACTIVITY_AWAKE;
 	m_eAutomateType = NO_AUTOMATE;
-
+	
+	//JR_MODS : reset automate toggle back to normal
+#if defined(JR_MODS_H)
+	m_eAutomateToggle = false;
+	m_eJScore = 0;
+#endif
 	m_kLastPath.clear();
 	m_uiLastPathCacheDest = (uint)-1;
 
@@ -18535,7 +18540,39 @@ bool CvUnit::IsAutomated() const
 	return (GetAutomateType() != NO_AUTOMATE);
 }
 
+//  --------------------------------------------------------------------------------
+#if defined(JR_MODS_H)
+//  JR_Mods : void setAutomateToggle
+void CvUnit::SetAutomateToggle()
+{
+	VALIDATE_OBJECT
+	m_eAutomateToggle = !m_eAutomateToggle;
+}
 
+//  --------------------------------------------------------------------------------
+//  JR_Mods : bool getAutomateToggle
+bool CvUnit::GetAutomateToggle() const
+{
+	VALIDATE_OBJECT
+	return m_eAutomateToggle;
+}
+//  JR_Mods : void setJscore
+void CvUnit::SetJScore(int score)
+{
+	VALIDATE_OBJECT
+	m_eJScore = score;
+}
+
+//  --------------------------------------------------------------------------------
+//  JR_Mods : bool getJScore
+int CvUnit::GetJScore() const
+{
+	VALIDATE_OBJECT
+	return m_eJScore;
+}
+
+
+#endif
 //	--------------------------------------------------------------------------------
 void CvUnit::SetAutomateType(AutomateTypes eNewValue)
 {

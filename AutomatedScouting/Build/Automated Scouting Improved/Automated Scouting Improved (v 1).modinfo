@@ -22,6 +22,15 @@
   <References />
   <Blocks />
   <Files>
-    <File md5="90CD4BEB1BC3FD32CDE30DF1F0A41A25" import="1">CvGameCoreDLLFinal Release.dll</File>
+    <File md5="AEF11BFFA25772CC862325E5C029888F" import="1">CvGameCore_Expansion2.dll</File>
+    <File md5="6C9964F0B99400383065FC3AE2ED608A" import="1">Test_UnitPanelHook.lua</File>
+    <File md5="0F4C2F6003AF659BB3538FDD338543F5" import="1">UnitPanel.lua</File>
   </Files>
+  <EntryPoints>
+    <EntryPoint type="InGameUIAddin" file="Test_UnitPanelHook.lua">
+      <Name>AutomatedScouting</Name>
+      <Description>
+      </Description>
+    </EntryPoint>
+  </EntryPoints>
 </Mod>

@@ -2223,9 +2223,17 @@ void CvHomelandAI::ExecuteExplorerMoves()
 						strLogString.Format("UnitID: %d Moving to goody hut, X: %d, Y: %d, from X: %d Y: %d", pUnit->GetID(), pkStepPlot->getX(), pkStepPlot->getY(), pUnit->getX(), pUnit->getY());
 						LogHomelandMessage(strLogString);
 					}
-					pUnit->PushMission(CvTypes::getMISSION_MOVE_TO(), pkStepPlot->getX(), pkStepPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER, false, false, MISSIONAI_EXPLORE, pkStepPlot);
-					pUnit->finishMoves();
-					UnitProcessed(pUnit->GetID());
+//JR_MODS
+#if defined(JR_DLL)
+					if(!pUnit->GetAutomateToggle())
+					{
+#endif
+						pUnit->PushMission(CvTypes::getMISSION_MOVE_TO(), pkStepPlot->getX(), pkStepPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER, false, false, MISSIONAI_EXPLORE, pkStepPlot);
+						pUnit->finishMoves();
+						UnitProcessed(pUnit->GetID());
+#if defined(JR_DLL)
+					}
+#endif
 				}
 				else
 				{
@@ -2300,47 +2308,73 @@ void CvHomelandAI::ExecuteExplorerMoves()
 #endif
 
 				DomainTypes eDomain = pUnit->getDomainType();
-				int iScore = CvEconomicAI::ScoreExplorePlot(pEvalPlot, eTeam, iBaseSightRange, eDomain);
-				if(iScore > 0)
+//JR_MODS do eval 
+#if defined(JR_DLL)
+				int iScore = 0;
+				if(pUnit->GetAutomateToggle())
 				{
-					if (eDomain == DOMAIN_LAND)
+					iScore = CvEconomicAI::ScoreExplorePlotGreedy(pEvalPlot, eTeam, iBaseSightRange, eDomain);
+				}
+				else
+#endif
+				iScore = CvEconomicAI::ScoreExplorePlot(pEvalPlot, eTeam, iBaseSightRange, eDomain);
+//JR_MODS
+#if defined(JR_DLL)
+				if(!pUnit->GetAutomateToggle())
+				{
+#endif
+					if(iScore > 0)
 					{
-						if (pEvalPlot->isHills())
+						if (eDomain == DOMAIN_LAND)
 						{
-							iScore += 50;
-						}
-						if (pUnit->IsEmbarkAllWater() && !pEvalPlot->isShallowWater())
-						{
-							iScore += 200;
-						}
-					}
-					else if (eDomain == DOMAIN_SEA)
-					{
-						if(pUnit->canSellExoticGoods(pEvalPlot))
-						{
-							float fRewardFactor = pUnit->calculateExoticGoodsDistanceFactor(pEvalPlot);
-							if (fRewardFactor >= 0.75f)
+							if (pEvalPlot->isHills())
 							{
-								iScore += 150;
+								iScore += 50;
 							}
-							else if (fRewardFactor >= 0.5f)
+							if (pUnit->IsEmbarkAllWater() && !pEvalPlot->isShallowWater())
 							{
-								iScore += 75;
+								iScore += 200;
 							}
 						}
+						else if (eDomain == DOMAIN_SEA)
+						{
+							if(pUnit->canSellExoticGoods(pEvalPlot))
+							{
+								float fRewardFactor = pUnit->calculateExoticGoodsDistanceFactor(pEvalPlot);
+								if (fRewardFactor >= 0.75f)
+								{
+									iScore += 150;
+								}
+								else if (fRewardFactor >= 0.5f)
+								{
+									iScore += 75;
+								}
+							}
 
-						if(pEvalPlot->isAdjacentToLand())
-						{
-							iScore += 200;
+							if(pEvalPlot->isAdjacentToLand())
+							{
+								iScore += 200;
+							}
 						}
-					}
 
 #if defined(PATH_PLAN_LAST)
-					aBestPlotList.push_back(pEvalPlot, iScore);
+
+						aBestPlotList.push_back(pEvalPlot,iScore);
+					
 #endif
+					}
+#if defined(JR_DLL)
 				}
+#endif
+#if defined(PATH_PLAN_LAST)
+#if defined(JR_DLL)
+				else
+					aBestPlotList.push_back(pEvalPlot,iScore);
+#endif
+#endif
 
 #if !defined(PATH_PLAN_LAST)
+
 				if(iScore > iBestPlotScore)
 				{
 					pBestPlot = pEvalPlot;
@@ -2379,10 +2413,23 @@ void CvHomelandAI::ExecuteExplorerMoves()
 		if(!pBestPlot && iMovementRange > 0)
 		{
 			FFastVector<int>& aiExplorationPlots = pEconomicAI->GetExplorationPlots();
+//JR_MODS
+#if defined(JR_DLL)
+			if(pUnit->GetAutomateToggle())
+			{
+				aiExplorationPlots = pEconomicAI->GetJRExplorationPlots();
+			}
+#endif
 			if (aiExplorationPlots.size() > 0)
 			{
 				FFastVector<int>& aiExplorationPlotRatings = pEconomicAI->GetExplorationPlotRatings();
-
+//JR_MODS
+#if defined(JR_DLL)
+				if(pUnit->GetAutomateToggle())
+				{
+					aiExplorationPlotRatings = pEconomicAI->GetJRExplorationPlotRatings();
+				}
+#endif
 				aBestPlotList.clear();
 				aBestPlotList.reserve(aiExplorationPlots.size());
 
@@ -2411,16 +2458,29 @@ void CvHomelandAI::ExecuteExplorerMoves()
 
 					int iRating = aiExplorationPlotRatings[ui];
 
+//JR_MODS change this later
+#if defined(JR_DLL)
+					iPlotScore = iRating;
+#endif
+
 #if defined(PATH_PLAN_LAST)
 					int iDistance = plotDistance(iUnitX, iUnitY, pEvalPlot->getX(), pEvalPlot->getY());
 					int iEstimateTurns = iDistance / iMovementRange;
 					if(iEstimateTurns == 0)
 					{
-						iPlotScore = 1000 * iRating;
+//JR_MODS
+#if defined(JR_DLL)
+						if(!pUnit->GetAutomateToggle())
+							iPlotScore = 1000 * iRating;
+#endif
 					}
 					else
 					{
-						iPlotScore = (1000 * iRating) / iEstimateTurns;
+//JR_MODS
+#if defined(JR_DLL)
+						if(!pUnit->GetAutomateToggle())
+							iPlotScore = (1000 * iRating) / iEstimateTurns;
+#endif
 					}
 
 					aBestPlotList.push_back(pEvalPlot, iPlotScore);
@@ -2436,11 +2496,19 @@ void CvHomelandAI::ExecuteExplorerMoves()
 					int iDistance = pNode->m_iData2;
 					if(iDistance == 0)
 					{
-						iPlotScore = 1000 * iRating;
+//JR_MODS
+#if defined(JR_DLL)
+						if(!pUnit->GetAutomateToggle())
+							iPlotScore = 1000 * iRating;
+#endif
 					}
 					else
 					{
-						iPlotScore = (1000 * iRating) / iDistance;
+//JR_MODS
+#if defined(JR_DLL)
+						if(!pUnit->GetAutomateToggle())
+							iPlotScore = (1000 * iRating) / iDistance;
+#endif
 					}
 
 					if(iPlotScore > iBestPlotScore)
@@ -2462,6 +2530,12 @@ void CvHomelandAI::ExecuteExplorerMoves()
 							continue;
 						}
 					}
+/*//JR_MODS
+#if defined(JR_DLL)
+					if(pUnit->GetAutomateToggle())
+						pUnit->SetJScore(iBestPlotScore);
+#endif
+*/
 #endif
 				}
 
@@ -2486,6 +2560,11 @@ void CvHomelandAI::ExecuteExplorerMoves()
 						else if(IsValidExplorerEndTurnPlot(pUnit.pointer(), pEndTurnPlot))
 						{
 							pBestPlot = pEndTurnPlot;
+//JR_MODS
+/*#if defined(JR_DLL)
+							if(pUnit->GetAutomateToggle())
+								pUnit->SetJScore(aBestPlotList.GetWeight(i));
+#endif*/
 							break;
 						}
 						else
@@ -2502,6 +2581,13 @@ void CvHomelandAI::ExecuteExplorerMoves()
 		if(pBestPlot)
 		{
 			CvAssertMsg(!pUnit->atPlot(*pBestPlot), "Exploring unit is already at the best place to explore");
+//JR_MODS
+#if defined(JR_DLL)
+			if(pUnit->GetAutomateToggle())
+			{
+				pUnit->SetJScore(CvEconomicAI::ScoreExplorePlotGreedy(pBestPlot, eTeam, iBaseSightRange, pUnit->getDomainType()));
+			}
+#endif
 			pUnit->PushMission(CvTypes::getMISSION_MOVE_TO(), pBestPlot->getX(), pBestPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER, false, false, MISSIONAI_EXPLORE, pBestPlot);
 
 			// Only mark as done if out of movement

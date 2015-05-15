@@ -21,6 +21,16 @@
     <AssemblyName>AutomatedScouting</AssemblyName>
     <RootNamespace>AutomatedScouting</RootNamespace>
     <ModReferences />
+    <ModContent>
+      <Content>
+        <Type>InGameUIAddin</Type>
+        <Name>AutomatedScouting</Name>
+        <Description />
+        <FileName>Test_UnitPanelHook.lua</FileName>
+      </Content>
+    </ModContent>
+    <ModActions>
+    </ModActions>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Default' ">
     <OutputPath>.</OutputPath>
@@ -34,7 +44,15 @@
     <DeployMod>true</DeployMod>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="CvGameCoreDLLFinal Release.dll">
+    <Content Include="CvGameCore_Expansion2.dll">
+      <SubType>Lua</SubType>
+      <ImportIntoVFS>True</ImportIntoVFS>
+    </Content>
+    <Content Include="Test_UnitPanelHook.lua">
+      <SubType>Lua</SubType>
+      <ImportIntoVFS>True</ImportIntoVFS>
+    </Content>
+    <Content Include="UnitPanel.lua">
       <SubType>Lua</SubType>
       <ImportIntoVFS>True</ImportIntoVFS>
     </Content>
