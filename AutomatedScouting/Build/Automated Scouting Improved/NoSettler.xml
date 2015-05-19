@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!---->
+<GameData>
+	<Units>
+		<Delete Type="UNIT_SETTLER"/>
+	</Units>
+	<!-- Remove any entries that reference the mech in Units. -->
+	<UnitClasses>
+		<Delete Type="UNITCLASS_SETTLER"/>
+	</UnitClasses> 
+		<Unit_AITypes>
+			<Delete UnitType="UNIT_SETTLER"/>
+		</Unit_AITypes> 
+	<Unit_ResourceQuantityREquirements>
+		<Delete UnitType="UNIT_SETTLER"/>
+	</Unit_ResourceQuantityREquirements> 
+	<UnitGameplay2DScripts>
+		<Delete UnitType="UNIT_SETTLER"/>
+	</UnitGameplay2DScripts>
+</GameData>

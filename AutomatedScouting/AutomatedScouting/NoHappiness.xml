@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Created by ModBuddy on 5/19/2015 4:03:31 PM -->
+<GameData>
+	<GameOptions>
+		<Update>
+			<Where Type="GAMEOPTION_NO_HAPPINESS"/>
+			<Set Default="True"/>
+			</Update>
+</GameOptions>
+</GameData>
