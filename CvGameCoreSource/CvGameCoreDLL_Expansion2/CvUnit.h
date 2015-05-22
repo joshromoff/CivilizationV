@@ -133,8 +133,8 @@ public:
 	bool IsAutomated() const;
 	//JR_MODS : get and set automate toggle
 #if defined(JR_MODS_H)
-	void SetAutomateToggle();
-	bool GetAutomateToggle() const;
+	void SetAutomateToggle(int t);
+	int GetAutomateToggle() const;
 	void SetJScore(int score);
 	int  GetJScore() const;
 #endif
@@ -1453,7 +1453,7 @@ protected:
 	FAutoVariable<ActivityTypes, CvUnit> m_eActivityType;
 	//JR_MODS : adding in m_eAutomateToggle and m_eJScore
 	#if defined(JR_MODS_H)
-	bool m_eAutomateToggle;
+	int m_eAutomateToggle;
 	int m_eJScore;
 	#endif
 	FAutoVariable<AutomateTypes, CvUnit> m_eAutomateType;

@@ -5,21 +5,54 @@
 --
 
 local testAction = {
-  Name = "AutoExploreToggle",
-  Title = "Auto Explore Toggle", -- or a TXT_KEY
-  OrderPriority = 90, -- default is 200
+  Name = "DefaultExplore",
+  Title = "Default Explore", -- or a TXT_KEY
+  OrderPriority = 89, -- default is 200
   IconAtlas = "UNIT_ACTION_ATLAS", -- 45 and 64 variations required
   PortraitIndex = 47,
-  ToolTip = "Toggle Auto Explore type", -- or a TXT_KEY_ or a function
+  ToolTip = "Reset Explore back to default", -- or a TXT_KEY_ or a function
   Condition = function(action, unit) print(string.format("Condition %s called for unit %i for player %i", action.Name, unit:GetID(), unit:GetOwner())); return true end, -- or nil or a boolean, default is true
   Disabled = function(action, unit) print(string.format("Disabled %s called for unit %i for player %i", action.Name, unit:GetID(), unit:GetOwner())); return false end, -- or nil or a boolean, default is false
   Action = function(action, unit, eClick)
-    unit:SetToAutomate();
+    unit:SetToAutomate(0);
+	Events.SerialEventGameMessagePopup({Type=ButtonPopupTypes.BUTTONPOPUP_TEXT, Data1=600, Text=string.format("%s %s called for %s %s automated= %s improved= %s score = %s", ((eClick == Mouse.eLClick) and "Left" or "Right"), action.Name, Players[unit:GetOwner()]:GetCivilizationAdjective(), unit:GetName(),tostring(unit:IsAutomated()),tostring(unit:GetAutoToggle()),tostring(unit:GetScore()))})
+  end,
+  }
+  LuaEvents.UnitPanelActionAddin(testAction)
+ local testAction1 = {
+  Name = "GreedyExplore",
+  Title = "Greedy Explore", -- or a TXT_KEY
+  OrderPriority = 90, -- default is 200
+  IconAtlas = "UNIT_ACTION_ATLAS", -- 45 and 64 variations required
+  PortraitIndex = 47,
+  ToolTip = "Turn on Greedy Explore", -- or a TXT_KEY_ or a function
+  Condition = function(action, unit) print(string.format("Condition %s called for unit %i for player %i", action.Name, unit:GetID(), unit:GetOwner())); return true end, -- or nil or a boolean, default is true
+  Disabled = function(action, unit) print(string.format("Disabled %s called for unit %i for player %i", action.Name, unit:GetID(), unit:GetOwner())); return false end, -- or nil or a boolean, default is false
+  Action = function(action, unit, eClick)
+    unit:SetToAutomate(1);
+	Events.SerialEventGameMessagePopup({Type=ButtonPopupTypes.BUTTONPOPUP_TEXT, Data1=600, Text=string.format("%s %s called for %s %s automated= %s improved= %s score = %s", ((eClick == Mouse.eLClick) and "Left" or "Right"), action.Name, Players[unit:GetOwner()]:GetCivilizationAdjective(), unit:GetName(),tostring(unit:IsAutomated()),tostring(unit:GetAutoToggle()),tostring(unit:GetScore()))})
+  end,
+  }
+  LuaEvents.UnitPanelActionAddin(testAction1)
+ local testAction2 = {
+  Name = "RandomExplore",
+  Title = "Random Explore", -- or a TXT_KEY
+  OrderPriority = 91, -- default is 200
+  IconAtlas = "UNIT_ACTION_ATLAS", -- 45 and 64 variations required
+  PortraitIndex = 47,
+  ToolTip = "Turn on Random Explore", -- or a TXT_KEY_ or a function
+  Condition = function(action, unit) print(string.format("Condition %s called for unit %i for player %i", action.Name, unit:GetID(), unit:GetOwner())); return true end, -- or nil or a boolean, default is true
+  Disabled = function(action, unit) print(string.format("Disabled %s called for unit %i for player %i", action.Name, unit:GetID(), unit:GetOwner())); return false end, -- or nil or a boolean, default is false
+  Action = function(action, unit, eClick)
+    unit:SetToAutomate(2);
 	Events.SerialEventGameMessagePopup({Type=ButtonPopupTypes.BUTTONPOPUP_TEXT, Data1=600, Text=string.format("%s %s called for %s %s automated= %s improved= %s score = %s", ((eClick == Mouse.eLClick) and "Left" or "Right"), action.Name, Players[unit:GetOwner()]:GetCivilizationAdjective(), unit:GetName(),tostring(unit:IsAutomated()),tostring(unit:GetAutoToggle()),tostring(unit:GetScore()))})
   end,
 }
 -- Uncomment the next line to see the example Unit Action
-LuaEvents.UnitPanelActionAddin(testAction)
+LuaEvents.UnitPanelActionAddin(testAction2)
+
+
+
 
 local testBuild = {
   Name = "MyBuild",

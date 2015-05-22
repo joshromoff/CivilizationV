@@ -225,7 +225,7 @@ protected:
 	static int lIsAutomated(lua_State* L);
 #if defined(JR_LUAAPI)
 	LUAAPIEXTN(SetToAutomate);
-//	static int lSetToAutomate(lua_State* L);
+	//static int lSetToAutomate(lua_State* L,int t);
 	
 #endif
 #if defined(JR_LUAAPI)

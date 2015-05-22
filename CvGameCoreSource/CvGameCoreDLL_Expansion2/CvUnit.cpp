@@ -913,7 +913,7 @@ void CvUnit::reset(int iID, UnitTypes eUnit, PlayerTypes eOwner, bool bConstruct
 	
 	//JR_MODS : reset automate toggle back to normal
 #if defined(JR_MODS_H)
-	m_eAutomateToggle = false;
+	m_eAutomateToggle = 0;
 	m_eJScore = 0;
 #endif
 	m_kLastPath.clear();
@@ -18543,15 +18543,15 @@ bool CvUnit::IsAutomated() const
 //  --------------------------------------------------------------------------------
 #if defined(JR_MODS_H)
 //  JR_Mods : void setAutomateToggle
-void CvUnit::SetAutomateToggle()
+void CvUnit::SetAutomateToggle(int t)
 {
 	VALIDATE_OBJECT
-	m_eAutomateToggle = !m_eAutomateToggle;
+	m_eAutomateToggle = t;
 }
 
 //  --------------------------------------------------------------------------------
 //  JR_Mods : bool getAutomateToggle
-bool CvUnit::GetAutomateToggle() const
+int CvUnit::GetAutomateToggle() const
 {
 	VALIDATE_OBJECT
 	return m_eAutomateToggle;

@@ -2282,9 +2282,10 @@ int CvLuaUnit::lIsAutomated(lua_State* L)
 int CvLuaUnit::lSetToAutomate(lua_State* L)
 {
 	CvUnit* pkUnit = GetInstance(L);
-	const AutomateTypes eAutomate = (AutomateTypes)lua_tointeger(L, 2);
-	pkUnit->SetAutomateToggle();
-	pkUnit->SetAutomateType(eAutomate);
+	const AutomateTypes eAutomate = (AutomateTypes)1;
+	const int exploreType = luaL_optint(L, 2, 0);
+	pkUnit->SetAutomateToggle(exploreType);
+	//pkUnit->SetAutomateType(eAutomate);
 	
 	
 	return 0;
@@ -2296,9 +2297,9 @@ int CvLuaUnit::lSetToAutomate(lua_State* L)
 int CvLuaUnit::lGetAutoToggle(lua_State* L)
 {
 	CvUnit* pkUnit = GetInstance(L);
-	const bool bResult = pkUnit->GetAutomateToggle();
+	const int iResult = pkUnit->GetAutomateToggle();
 
-	lua_pushboolean(L, bResult);
+	lua_pushinteger(L, iResult);
 	return 1;
 
 }

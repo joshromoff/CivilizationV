@@ -310,6 +310,7 @@ void CvEconomicAI::Reset()
 		m_aiJRExplorationPlots[ui] = -1;
 		m_aiJRExplorationPlotRatings[ui] = -1;
 	}
+	m_JRNumberOfRevealed = 0;
 #endif
 	for(uint ui = 0; ui < m_aiExplorationPlots.size(); ui++)
 	{
@@ -926,6 +927,10 @@ FFastVector<int>& CvEconomicAI::GetJRExplorationPlotRatings()
 	}
 
 	return m_aiJRExplorationPlotRatings;
+}
+int CvEconomicAI::GetJRNumberOfRevealed()
+{
+	return m_JRNumberOfRevealed;
 }
 #endif
 FFastVector<int>& CvEconomicAI::GetExplorationPlots()
@@ -2395,6 +2400,11 @@ void CvEconomicAI::UpdatePlots()
 	uint uiGoodyHutPlotIndex = 0;
 	TeamTypes ePlayerTeam = m_pPlayer->getTeam();
 
+//jr_mods
+#if defined(JR_DLL)
+	m_JRNumberOfRevealed = 0;
+#endif
+
 	CvPlot* pPlot;
 	for(int i = 0; i < GC.getMap().numPlots(); i++)
 	{
@@ -2441,6 +2451,10 @@ void CvEconomicAI::UpdatePlots()
 			eDomain = DOMAIN_SEA;
 		}
 #if defined(JR_DLL)
+		if(pPlot->isRevealed(ePlayerTeam))
+		{
+			m_JRNumberOfRevealed ++;
+		}
 		int jScore = ScoreExplorePlotGreedy(pPlot,ePlayerTeam, 1, eDomain);
 		// add an entry for this plot
 		if(m_aiJRExplorationPlots.size() <= uiJRExplorationPlotIndex)

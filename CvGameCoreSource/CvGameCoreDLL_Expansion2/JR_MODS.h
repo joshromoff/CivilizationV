@@ -7,6 +7,10 @@
 //DLL 
 #ifndef JR_DLL
 #define JR_DLL
+
+#include <iostream>
+#include <fstream>
+
 #endif
 
 // LUA API wrappers

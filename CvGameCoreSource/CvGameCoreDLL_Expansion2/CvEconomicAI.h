@@ -168,6 +168,7 @@ public:
 #if defined(JR_DLL)
 	FFastVector<int>& GetJRExplorationPlots();
 	FFastVector<int>& GetJRExplorationPlotRatings();
+	int               GetJRNumberOfRevealed();
 #endif
 	FFastVector<int>& GetExplorationPlots();
 	FFastVector<int>& GetExplorationPlotRatings();
@@ -278,6 +279,7 @@ private:
 #if defined(JR_DLL)
 	FFastVector<int> m_aiJRExplorationPlots;
 	FFastVector<int> m_aiJRExplorationPlotRatings;
+	int m_JRNumberOfRevealed;
 #endif
 	struct GoodyHutUnitAssignment
 	{

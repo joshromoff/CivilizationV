@@ -2183,8 +2183,9 @@ void CvHomelandAI::ExecuteExplorerMoves()
 		CvPlot* pGoodyPlot = pEconomicAI->GetUnitTargetGoodyPlot(pUnit.pointer(), &pkStepPlot);
 //JR_MODS
 #if defined(JR_DLL)
-		if(!pUnit->GetAutomateToggle())
+		if(pUnit->GetAutomateToggle() == 0)
 		{
+			
 #endif
 			if (pGoodyPlot)
 			{
@@ -2313,16 +2314,28 @@ void CvHomelandAI::ExecuteExplorerMoves()
 //JR_MODS do eval 
 #if defined(JR_DLL)
 				int iScore = 0;
-				if(pUnit->GetAutomateToggle())
+				switch (pUnit->GetAutomateToggle())
 				{
-					iScore = CvEconomicAI::ScoreExplorePlotGreedy(pEvalPlot, eTeam, iBaseSightRange, eDomain);
+					case 0:
+						iScore = CvEconomicAI::ScoreExplorePlot(pEvalPlot, eTeam, iBaseSightRange, eDomain);
+						break;
+					case 1:
+						iScore = CvEconomicAI::ScoreExplorePlotGreedy(pEvalPlot, eTeam, iBaseSightRange, eDomain);
+						break;
+					/*TODO CHANGE THIS*/
+					case 2:
+						iScore = CvEconomicAI::ScoreExplorePlotGreedy(pEvalPlot, eTeam, iBaseSightRange, eDomain);
+						break;
+					default:
+						break;
 				}
-				else
-#endif
+				
+#else
 				iScore = CvEconomicAI::ScoreExplorePlot(pEvalPlot, eTeam, iBaseSightRange, eDomain);
+#endif
 //JR_MODS
 #if defined(JR_DLL)
-				if(!pUnit->GetAutomateToggle())
+				if(pUnit->GetAutomateToggle() == 0)
 				{
 #endif
 					if(iScore > 0)
@@ -2417,7 +2430,7 @@ void CvHomelandAI::ExecuteExplorerMoves()
 			FFastVector<int>& aiExplorationPlots = pEconomicAI->GetExplorationPlots();
 //JR_MODS
 #if defined(JR_DLL)
-			if(pUnit->GetAutomateToggle())
+			if(pUnit->GetAutomateToggle() != 0)
 			{
 				aiExplorationPlots = pEconomicAI->GetJRExplorationPlots();
 			}
@@ -2427,7 +2440,7 @@ void CvHomelandAI::ExecuteExplorerMoves()
 				FFastVector<int>& aiExplorationPlotRatings = pEconomicAI->GetExplorationPlotRatings();
 //JR_MODS
 #if defined(JR_DLL)
-				if(pUnit->GetAutomateToggle())
+				if(pUnit->GetAutomateToggle() != 0)
 				{
 					aiExplorationPlotRatings = pEconomicAI->GetJRExplorationPlotRatings();
 				}
@@ -2472,17 +2485,19 @@ void CvHomelandAI::ExecuteExplorerMoves()
 					{
 //JR_MODS
 #if defined(JR_DLL)
-						if(!pUnit->GetAutomateToggle())
-							iPlotScore = 1000 * iRating;
+						if(pUnit->GetAutomateToggle() == 0)
 #endif
+							iPlotScore = 1000 * iRating;
+
 					}
 					else
 					{
 //JR_MODS
 #if defined(JR_DLL)
-						if(!pUnit->GetAutomateToggle())
-							iPlotScore = (1000 * iRating) / iEstimateTurns;
+						if(pUnit->GetAutomateToggle() == 0)
 #endif
+							iPlotScore = (1000 * iRating) / iEstimateTurns;
+
 					}
 
 					aBestPlotList.push_back(pEvalPlot, iPlotScore);
@@ -2500,17 +2515,18 @@ void CvHomelandAI::ExecuteExplorerMoves()
 					{
 //JR_MODS
 #if defined(JR_DLL)
-						if(!pUnit->GetAutomateToggle())
-							iPlotScore = 1000 * iRating;
+						if(pUnit->GetAutomateToggle() == 0)
 #endif
+							iPlotScore = 1000 * iRating;
+
 					}
 					else
 					{
 //JR_MODS
 #if defined(JR_DLL)
-						if(!pUnit->GetAutomateToggle())
-							iPlotScore = (1000 * iRating) / iDistance;
+						if(pUnit->GetAutomateToggle() == 0)
 #endif
+							iPlotScore = (1000 * iRating) / iDistance;
 					}
 
 					if(iPlotScore > iBestPlotScore)
@@ -2534,7 +2550,7 @@ void CvHomelandAI::ExecuteExplorerMoves()
 					}
 /*//JR_MODS
 #if defined(JR_DLL)
-					if(pUnit->GetAutomateToggle())
+					if(pUnit->GetAutomateToggle() != 0)
 						pUnit->SetJScore(iBestPlotScore);
 #endif
 */
@@ -2562,11 +2578,7 @@ void CvHomelandAI::ExecuteExplorerMoves()
 						else if(IsValidExplorerEndTurnPlot(pUnit.pointer(), pEndTurnPlot))
 						{
 							pBestPlot = pEndTurnPlot;
-//JR_MODS
-/*#if defined(JR_DLL)
-							if(pUnit->GetAutomateToggle())
-								pUnit->SetJScore(aBestPlotList.GetWeight(i));
-#endif*/
+
 							break;
 						}
 						else
@@ -2585,10 +2597,24 @@ void CvHomelandAI::ExecuteExplorerMoves()
 			CvAssertMsg(!pUnit->atPlot(*pBestPlot), "Exploring unit is already at the best place to explore");
 //JR_MODS
 #if defined(JR_DLL)
-			if(pUnit->GetAutomateToggle())
+			fstream log;
+			switch(pUnit->GetAutomateToggle())
 			{
-				pUnit->SetJScore(CvEconomicAI::ScoreExplorePlotGreedy(pBestPlot, eTeam, iBaseSightRange, pUnit->getDomainType()));
+				case 0:
+					log.open("../Default/runs.csv",fstream::app|fstream::out);
+					break;
+				case 1:
+					pUnit->SetJScore(CvEconomicAI::ScoreExplorePlotGreedy(pBestPlot, eTeam, iBaseSightRange, pUnit->getDomainType()));
+					log.open("../Greedy/runs.csv",fstream::app|fstream::out);
+					break;
+				case 2:
+					log.open("../Random/runs.csv",fstream::app|fstream::out);
+					break;
+				default:
+					break;
 			}
+			log << GC.getGame().getElapsedGameTurns() << "," << pEconomicAI->GetJRNumberOfRevealed() << endl;
+			log.close();
 #endif
 			pUnit->PushMission(CvTypes::getMISSION_MOVE_TO(), pBestPlot->getX(), pBestPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER, false, false, MISSIONAI_EXPLORE, pBestPlot);
 
