@@ -558,7 +558,7 @@ int CvLuaUnit::lDoCommand(lua_State* L)
 {
 	return BasicLuaMethod(L, &CvUnit::doCommand);
 }
-//------------------------------------------------------------------------------
+//----------------------------------------------------------- -------------------
 //CyPlot* getPathEndTurnPlot();
 int CvLuaUnit::lGetPathEndTurnPlot(lua_State* L)
 {

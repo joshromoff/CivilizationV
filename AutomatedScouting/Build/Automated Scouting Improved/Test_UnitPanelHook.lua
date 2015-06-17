@@ -103,6 +103,22 @@ local testAction5 = {
 -- Uncomment the next line to see the example Unit Action
 LuaEvents.UnitPanelActionAddin(testAction5)
 
+local testAction6 = {
+  Name = "directionSortLocal",
+  Title = "Direction Sort local", -- or a TXT_KEY
+  OrderPriority = 95, -- default is 200
+  IconAtlas = "UNIT_ACTION_ATLAS", -- 45 and 64 variations required
+  PortraitIndex = 47,
+  ToolTip = "Turn on Direction sort local", -- or a TXT_KEY_ or a function
+  Condition = function(action, unit) print(string.format("Condition %s called for unit %i for player %i", action.Name, unit:GetID(), unit:GetOwner())); return true end, -- or nil or a boolean, default is true
+  Disabled = function(action, unit) print(string.format("Disabled %s called for unit %i for player %i", action.Name, unit:GetID(), unit:GetOwner())); return false end, -- or nil or a boolean, default is false
+  Action = function(action, unit, eClick)
+    unit:SetToAutomate(6);
+	Events.SerialEventGameMessagePopup({Type=ButtonPopupTypes.BUTTONPOPUP_TEXT, Data1=600, Text=string.format("%s %s called for %s %s automated= %s improved= %s score = %s", ((eClick == Mouse.eLClick) and "Left" or "Right"), action.Name, Players[unit:GetOwner()]:GetCivilizationAdjective(), unit:GetName(),tostring(unit:IsAutomated()),tostring(unit:GetAutoToggle()),tostring(unit:GetScore()))})
+  end,
+}
+-- Uncomment the next line to see the example Unit Action
+LuaEvents.UnitPanelActionAddin(testAction6)
 
 local testBuild = {
   Name = "MyBuild",

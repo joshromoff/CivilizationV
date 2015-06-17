@@ -915,6 +915,10 @@ void CvUnit::reset(int iID, UnitTypes eUnit, PlayerTypes eOwner, bool bConstruct
 #if defined(JR_MODS_H)
 	m_eAutomateToggle = 0;
 	m_eJScore = 0;
+	m_prevDirection = DIRECTION_NORTHEAST;
+	m_prevDestination = NULL;
+	m_clock = true;
+	m_orientation = DIRECTION_NORTHEAST;
 #endif
 	m_kLastPath.clear();
 	m_uiLastPathCacheDest = (uint)-1;
@@ -18542,6 +18546,70 @@ bool CvUnit::IsAutomated() const
 
 //  --------------------------------------------------------------------------------
 #if defined(JR_MODS_H)
+void CvUnit::SetAtEnd(bool atEnd)
+{
+	VALIDATE_OBJECT
+	m_atEnd = atEnd;
+}
+bool CvUnit::GetAtEnd()
+{
+	VALIDATE_OBJECT
+	return m_atEnd;
+}
+void CvUnit::SetAtMiddle(bool atMiddle)
+{
+	VALIDATE_OBJECT
+	m_atMiddle = atMiddle;
+}
+bool CvUnit::GetAtMiddle()
+{
+	VALIDATE_OBJECT
+	return m_atMiddle;
+}
+void CvUnit::SetClock()
+{
+	VALIDATE_OBJECT
+	m_clock = !m_clock; 
+}
+bool CvUnit::GetClock()
+{
+	VALIDATE_OBJECT
+	return m_clock;
+}
+void CvUnit::SetOrientation(DirectionTypes eDirection)
+{
+	VALIDATE_OBJECT
+	m_orientation = eDirection;
+}
+DirectionTypes CvUnit::GetOrientation()
+{
+	VALIDATE_OBJECT
+	return m_orientation;
+}
+//JR_MODS : void SetPrevDestination(CvPlot* destination)
+void CvUnit::SetPrevDestination(CvPlot* destination)
+{
+	VALIDATE_OBJECT
+	m_prevDestination = destination;
+}
+//JR_mods : DirectionTypes GetPrevDIrection()
+CvPlot* CvUnit::GetPrevDestination()
+{
+	VALIDATE_OBJECT
+	return m_prevDestination;
+}
+//JR_MODS : void SetPrevDirection(DirectionTypes eDirection)
+void CvUnit::SetPrevDirection(DirectionTypes eDirection)
+{
+	VALIDATE_OBJECT
+	m_prevDirection = eDirection;
+}
+//JR_mods : DirectionTypes GetPrevDIrection()
+DirectionTypes CvUnit::GetPrevDirection()
+{
+	VALIDATE_OBJECT
+	return m_prevDirection;
+}
 //  JR_Mods : void setAutomateToggle
 void CvUnit::SetAutomateToggle(int t)
 {

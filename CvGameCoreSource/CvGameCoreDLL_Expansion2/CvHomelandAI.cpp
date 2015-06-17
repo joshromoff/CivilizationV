@@ -2261,8 +2261,11 @@ void CvHomelandAI::ExecuteExplorerMoves()
 #if defined(JR_DLL)
 		}
 #endif
-
+#if defined(JR_DLL)
+		list<DirectionTypes> bestPath; //will store the best path so far
+#endif
 		CvPlot* pBestPlot = NULL;
+		CvPlot* pBestTarget = NULL;
 		int iBestPlotScore = 0;
 
 #if defined(PATH_PLAN_LAST)
@@ -2279,231 +2282,185 @@ void CvHomelandAI::ExecuteExplorerMoves()
 		{
 			iMovementRange = 1;
 		}
-
-		for(int iX = -iMovementRange; iX <= iMovementRange; iX++)
+#if defined(JR_DLL)
+		//if((pUnit->GetAutomateToggle() == 5 || (pUnit->GetAutomateToggle() == 6 && pEconomicAI->GetJRNumberOfEndExplorePoints() == 0)) && pUnit->GetPrevDestination() != NULL)
+		//{
+		//	//if the plot still has unexplored adjacent tiles.
+		//	//if(!pUnit->GetPrevDestination()->isVisited())
+		//	if(pEconomicAI->ScoreExplorePlotGreedy(pUnit->GetPrevDestination(),eTeam,1,pUnit->getDomainType()) >= 1)
+		//	{
+		//		bool bCanFindPath = GC.getPathFinder().GenerateUnitPath(pUnit.pointer(), iUnitX, iUnitY,pUnit->GetPrevDestination()->getX(), pUnit->GetPrevDestination()->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
+		//		if(bCanFindPath)
+		//		{
+		//			CvPlot* pEndTurnPlot = GC.getPathFinder().GetPathEndTurnPlot();
+		//			if(pEndTurnPlot != pUnit->plot())
+		//			{
+		//				if(IsValidExplorerEndTurnPlot(pUnit.pointer(), pEndTurnPlot))
+		//				{
+		//					pBestPlot = pEndTurnPlot;
+		//					pBestTarget = pUnit->GetPrevDestination();
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
+		if(!pBestPlot)
 		{
-			for(int iY = -iMovementRange; iY <= iMovementRange; iY++)
+#endif
+			for(int iX = -iMovementRange; iX <= iMovementRange; iX++)
 			{
-				CvPlot* pEvalPlot = plotXYWithRangeCheck(iUnitX, iUnitY, iX, iY, iMovementRange);
-				if(!pEvalPlot)
+				for(int iY = -iMovementRange; iY <= iMovementRange; iY++)
 				{
-					continue;
-				}
-
-				if(!IsValidExplorerEndTurnPlot(pUnit.pointer(), pEvalPlot))
-				{
-					continue;
-				}
-
-#if !defined(PATH_PLAN_LAST)
-				bool bCanFindPath = kPathFinder.GenerateUnitPath(pUnit.pointer(), pUnit->getX(), pUnit->getY(), pEvalPlot->getX(), pEvalPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
-				if(!bCanFindPath)
-				{
-					continue;
-				}
-
-				CvAStarNode* pNode = kPathFinder.GetLastNode();
-				int iDistance = pNode->m_iData2;
-				if(iDistance > 1)
-				{
-					continue;
-				}
-#endif
-
-				DomainTypes eDomain = pUnit->getDomainType();
-//JR_MODS do eval 
-#if defined(JR_DLL)
-				int iScore = 0;
-				switch (pUnit->GetAutomateToggle())
-				{
-					case 0:
-						iScore = CvEconomicAI::ScoreExplorePlot(pEvalPlot, eTeam, iBaseSightRange, eDomain);
-						break;
-					case 1:
-						iScore = CvEconomicAI::ScoreExplorePlotGreedy(pEvalPlot, eTeam, iBaseSightRange, eDomain);
-						break;
-					/*TODO CHANGE THIS*/
-					case 2:
-						iScore = CvEconomicAI::ScoreExplorePlotGreedy(pEvalPlot, eTeam, iBaseSightRange, eDomain);
-						break;
-					default:
-						break;
-				}
-				
-#else
-				iScore = CvEconomicAI::ScoreExplorePlot(pEvalPlot, eTeam, iBaseSightRange, eDomain);
-#endif
-//JR_MODS
-#if defined(JR_DLL)
-				if(pUnit->GetAutomateToggle() == 0)
-				{
-#endif
-					if(iScore > 0)
-					{
-						if (eDomain == DOMAIN_LAND)
-						{
-							if (pEvalPlot->isHills())
-							{
-								iScore += 50;
-							}
-							if (pUnit->IsEmbarkAllWater() && !pEvalPlot->isShallowWater())
-							{
-								iScore += 200;
-							}
-						}
-						else if (eDomain == DOMAIN_SEA)
-						{
-							if(pUnit->canSellExoticGoods(pEvalPlot))
-							{
-								float fRewardFactor = pUnit->calculateExoticGoodsDistanceFactor(pEvalPlot);
-								if (fRewardFactor >= 0.75f)
-								{
-									iScore += 150;
-								}
-								else if (fRewardFactor >= 0.5f)
-								{
-									iScore += 75;
-								}
-							}
-
-							if(pEvalPlot->isAdjacentToLand())
-							{
-								iScore += 200;
-							}
-						}
-
-#if defined(PATH_PLAN_LAST)
-
-						aBestPlotList.push_back(pEvalPlot,iScore);
-					
-#endif
-					}
-#if defined(JR_DLL)
-				}
-#endif
-#if defined(PATH_PLAN_LAST)
-#if defined(JR_DLL)
-				else
-					aBestPlotList.push_back(pEvalPlot,iScore);
-#endif
-#endif
-
-#if !defined(PATH_PLAN_LAST)
-
-				if(iScore > iBestPlotScore)
-				{
-					pBestPlot = pEvalPlot;
-					iBestPlotScore = iScore;
-					bFoundNearbyExplorePlot = true;
-				}
-#endif
-			}
-		}
-
-#if defined(PATH_PLAN_LAST)
-		uint uiListSize;
-		if ((uiListSize = aBestPlotList.size()) > 0)
-		{
-			aBestPlotList.SortItems();	// highest score will be first.
-			for (uint i = 0; i < uiListSize; ++i )	
-			{
-				CvPlot* pPlot = aBestPlotList.GetElement(i);
-				bool bCanFindPath = kPathFinder.GenerateUnitPath(pUnit.pointer(), iUnitX, iUnitY, pPlot->getX(), pPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
-				if(!bCanFindPath)
-				{
-					continue;
-				}
-
-				CvAStarNode* pNode = GC.getPathFinder().GetLastNode();
-				int iDistance = pNode->m_iData2;
-				if(iDistance <= 1)
-				{
-					pBestPlot = pPlot;
-					break;
-				}
-			}
-		}
-#endif
-
-		if(!pBestPlot && iMovementRange > 0)
-		{
-			FFastVector<int>& aiExplorationPlots = pEconomicAI->GetExplorationPlots();
-//JR_MODS
-#if defined(JR_DLL)
-			if(pUnit->GetAutomateToggle() != 0)
-			{
-				aiExplorationPlots = pEconomicAI->GetJRExplorationPlots();
-			}
-#endif
-			if (aiExplorationPlots.size() > 0)
-			{
-				FFastVector<int>& aiExplorationPlotRatings = pEconomicAI->GetExplorationPlotRatings();
-//JR_MODS
-#if defined(JR_DLL)
-				if(pUnit->GetAutomateToggle() != 0)
-				{
-					aiExplorationPlotRatings = pEconomicAI->GetJRExplorationPlotRatings();
-				}
-#endif
-				aBestPlotList.clear();
-				aBestPlotList.reserve(aiExplorationPlots.size());
-
-				iBestPlotScore = 0;
-
-				for(uint ui = 0; ui < aiExplorationPlots.size(); ui++)
-				{
-					int iPlot = aiExplorationPlots[ui];
-					if(iPlot < 0)
-					{
-						continue;
-					}
-
-					CvPlot* pEvalPlot = GC.getMap().plotByIndex(iPlot);
+					CvPlot* pEvalPlot = plotXYWithRangeCheck(iUnitX, iUnitY, iX, iY, iMovementRange);
 					if(!pEvalPlot)
 					{
 						continue;
 					}
-
-					int iPlotScore = 0;
 
 					if(!IsValidExplorerEndTurnPlot(pUnit.pointer(), pEvalPlot))
 					{
 						continue;
 					}
 
-					int iRating = aiExplorationPlotRatings[ui];
+#if !defined(PATH_PLAN_LAST)
+					bool bCanFindPath = kPathFinder.GenerateUnitPath(pUnit.pointer(), pUnit->getX(), pUnit->getY(), pEvalPlot->getX(), pEvalPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
+					if(!bCanFindPath)
+					{
+						continue;
+					}
 
-//JR_MODS change this later
-#if defined(JR_DLL)
-					iPlotScore = iRating;
+					CvAStarNode* pNode = kPathFinder.GetLastNode();
+					int iDistance = pNode->m_iData2;
+					if(iDistance > 1)
+					{
+						continue;
+					}
 #endif
+
+					DomainTypes eDomain = pUnit->getDomainType();
+//JR_MODS do eval 
+#if defined(JR_DLL)
+					int iScore = 0;
+					int gScore = CvEconomicAI::ScoreExplorePlotGreedy(pEvalPlot, eTeam, 1, eDomain);
+					switch (pUnit->GetAutomateToggle())
+					{
+						case 0:
+							iScore = CvEconomicAI::ScoreExplorePlot(pEvalPlot, eTeam, iBaseSightRange, eDomain);
+							break;
+						/*case 1:
+							if(gScore > 0)
+								iScore = gScore;
+							break;
+						case 2:
+							if(gScore > 0)
+								iScore = rand() % 100;
+							break;
+						case 3:
+							if(gScore > 0)
+								iScore = CvEconomicAI::ScoreExplorePlotHeuristic(pEvalPlot,eTeam,1,eDomain);
+							break;
+						case 4:
+							if(gScore > 0)
+								iScore = pEconomicAI->ScoreExplorePlotDistance(pEvalPlot,eTeam,1,eDomain);
+							break;
+						case 5:
+							if(gScore > 0)
+								iScore = 1;
+							break;*/
+						default:
+							break;
+					}
+				
+#else
+					int iScore = CvEconomicAI::ScoreExplorePlot(pEvalPlot, eTeam, iBaseSightRange, eDomain);
+#endif
+//JR_MODS
+#if defined(JR_DLL)
+					if(pUnit->GetAutomateToggle() == 0)
+					{
+#endif
+						if(iScore > 0)
+						{
+							if (eDomain == DOMAIN_LAND)
+							{
+								if (pEvalPlot->isHills())
+								{
+									iScore += 50;
+								}
+								if (pUnit->IsEmbarkAllWater() && !pEvalPlot->isShallowWater())
+								{
+									iScore += 200;
+								}
+							}
+							else if (eDomain == DOMAIN_SEA)
+							{
+								if(pUnit->canSellExoticGoods(pEvalPlot))
+								{
+									float fRewardFactor = pUnit->calculateExoticGoodsDistanceFactor(pEvalPlot);
+									if (fRewardFactor >= 0.75f)
+									{
+										iScore += 150;
+									}
+									else if (fRewardFactor >= 0.5f)
+									{
+										iScore += 75;
+									}
+								}
+
+								if(pEvalPlot->isAdjacentToLand())
+								{
+									iScore += 200;
+								}
+							}
 
 #if defined(PATH_PLAN_LAST)
-					int iDistance = plotDistance(iUnitX, iUnitY, pEvalPlot->getX(), pEvalPlot->getY());
-					int iEstimateTurns = iDistance / iMovementRange;
-					if(iEstimateTurns == 0)
-					{
-//JR_MODS
-#if defined(JR_DLL)
-						if(pUnit->GetAutomateToggle() == 0)
+
+							aBestPlotList.push_back(pEvalPlot,iScore);
+					
 #endif
-							iPlotScore = 1000 * iRating;
-
-					}
-					else
-					{
-//JR_MODS
+						}
 #if defined(JR_DLL)
-						if(pUnit->GetAutomateToggle() == 0)
-#endif
-							iPlotScore = (1000 * iRating) / iEstimateTurns;
-
 					}
+#endif
+#if defined(PATH_PLAN_LAST)
+#if defined(JR_DLL)
+					else if(iScore > 0)
+					{
+						aBestPlotList.push_back(pEvalPlot,iScore);
+					}
+#endif
+#endif
 
-					aBestPlotList.push_back(pEvalPlot, iPlotScore);
+#if !defined(PATH_PLAN_LAST)
+#if defined(JR_DLL)
+					if(iScore > iBestPlotScore && pUnit->GetAutomateToggle() == 0)
 #else
-					// hitting the path finder, may not be the best idea. . .
-					bool bCanFindPath = GC.getPathFinder().GenerateUnitPath(pUnit.pointer(), iUnitX, iUnitY, pEvalPlot->getX(), pEvalPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
+					if(iScore > iBestPlotScore)
+#endif
+					{
+						pBestPlot = pEvalPlot;
+						iBestPlotScore = iScore;
+						bFoundNearbyExplorePlot = true;
+					}
+
+#endif
+				}
+			}
+
+#if defined(PATH_PLAN_LAST)
+
+			uint uiListSize;
+#if defined(JR_DLL) 
+			if ((uiListSize = aBestPlotList.size()) > 0 && pUnit->GetAutomateToggle() == 0)
+#else
+			if ((uiListSize = aBestPlotList.size()) > 0)
+#endif
+			{
+				aBestPlotList.SortItems();	// highest score will be first.
+				for (uint i = 0; i < uiListSize; ++i )	
+				{
+					CvPlot* pPlot = aBestPlotList.GetElement(i);
+					bool bCanFindPath = kPathFinder.GenerateUnitPath(pUnit.pointer(), iUnitX, iUnitY, pPlot->getX(), pPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
 					if(!bCanFindPath)
 					{
 						continue;
@@ -2511,109 +2468,573 @@ void CvHomelandAI::ExecuteExplorerMoves()
 
 					CvAStarNode* pNode = GC.getPathFinder().GetLastNode();
 					int iDistance = pNode->m_iData2;
-					if(iDistance == 0)
+					if(iDistance <= 1)
 					{
+						pBestPlot = pPlot;
+						break;
+					}
+				}
+			}
+
+#endif
+
+			if(!pBestPlot && iMovementRange > 0)
+			{
+				FFastVector<int>& aiExplorationPlots = pEconomicAI->GetExplorationPlots();
 //JR_MODS
 #if defined(JR_DLL)
-						if(pUnit->GetAutomateToggle() == 0)
-#endif
-							iPlotScore = 1000 * iRating;
-
-					}
+				switch(pUnit->GetAutomateToggle())
+				{
+				case 1:
+					aiExplorationPlots = pEconomicAI->GetExplorationPlotsGreedy();
+					break;
+				case 2:
+					aiExplorationPlots = pEconomicAI->GetExplorationPlotsRandom();
+					break;
+				case 3:
+					aiExplorationPlots = pEconomicAI->GetExplorationPlotsHeuristic();
+					break;
+				case 4:
+					aiExplorationPlots = pEconomicAI->GetExplorationPlotsDistance();
+					break;
+				case 5:
+					/*if(pEconomicAI->GetExplorationPlotsDirection(pUnit.pointer()).size() <= 0)
+					{*/
+						aiExplorationPlots = pEconomicAI->GetExplorationPlotsGreedy();
+					/*}
 					else
 					{
+						aiExplorationPlots = pEconomicAI->GetExplorationPlotsDirection(pUnit.pointer());
+					}*/
+					break;
+				case 6:
+					aiExplorationPlots = pEconomicAI->GetExplorationPlotsDirection();
+					break;
+				default:
+					break;
+				}
+
+#endif
+				if (aiExplorationPlots.size() > 0)
+				{
+					FFastVector<int>& aiExplorationPlotRatings = pEconomicAI->GetExplorationPlotRatings();
 //JR_MODS
 #if defined(JR_DLL)
-						if(pUnit->GetAutomateToggle() == 0)
-#endif
-							iPlotScore = (1000 * iRating) / iDistance;
-					}
-
-					if(iPlotScore > iBestPlotScore)
+					switch(pUnit->GetAutomateToggle())
 					{
-						CvPlot* pEndTurnPlot = GC.getPathFinder().GetPathEndTurnPlot();
-						if(pEndTurnPlot == pUnit->plot())
+					case 1:
+						aiExplorationPlotRatings = pEconomicAI->GetExplorationPlotRatingsGreedy();
+						break;
+					case 2:
+						aiExplorationPlotRatings = pEconomicAI->GetExplorationPlotRatingsRandom();
+						break;
+					case 3:
+						aiExplorationPlotRatings = pEconomicAI->GetExplorationPlotRatingsHeuristic();
+						break;
+					case 4:
+						aiExplorationPlotRatings = pEconomicAI->GetExplorationPlotRatingsDistance();
+						break;
+					case 5:
+						/*if(pEconomicAI->GetExplorationPlotRatingsDirection(pUnit.pointer()).size() <= 0)
+						{*/
+							aiExplorationPlotRatings = pEconomicAI->GetExplorationPlotRatingsGreedy();
+						/*}
+						else
 						{
-							pBestPlot = NULL;
-							iBestPlotScore = iPlotScore;
+							aiExplorationPlotRatings = pEconomicAI->GetExplorationPlotRatingsDirection(pUnit.pointer());
+						}*/
+						break;
+					case 6:
+						aiExplorationPlotRatings = pEconomicAI->GetExplorationPlotRatingsDirection();
+						break;
+					default:
+						break;
+					}
+#endif
+					aBestPlotList.clear();
+					aBestPlotList.reserve(aiExplorationPlots.size());
+
+					iBestPlotScore = 0;
+
+					for(uint ui = 0; ui < aiExplorationPlots.size(); ui++)
+					{
+						int iPlot = aiExplorationPlots[ui];
+						if(iPlot < 0)
+						{
+							continue;
 						}
-						else if(IsValidExplorerEndTurnPlot(pUnit.pointer(), pEndTurnPlot))
+
+						CvPlot* pEvalPlot = GC.getMap().plotByIndex(iPlot);
+						if(!pEvalPlot)
 						{
-							pBestPlot = pEndTurnPlot;
-							iBestPlotScore = iPlotScore;
+							continue;
+						}
+#if defined(JR_DLL)
+						float iPlotScore = 0;
+#else
+						int iPlotScore = 0;
+#endif
+
+						if(!IsValidExplorerEndTurnPlot(pUnit.pointer(), pEvalPlot))
+						{
+							continue;
+						}
+
+						int iRating = aiExplorationPlotRatings[ui];
+
+
+
+#if defined(PATH_PLAN_LAST)
+
+						int iDistance = plotDistance(iUnitX, iUnitY, pEvalPlot->getX(), pEvalPlot->getY());
+						int iEstimateTurns = iDistance / iMovementRange;
+						if(iEstimateTurns == 0)
+						{
+
+#if defined(JR_DLL)
+							switch(pUnit->GetAutomateToggle())
+							{
+							case 0:
+								iPlotScore = 1000 * iRating;
+								break;
+							case 1: //greedy
+								iPlotScore = iRating;
+								break;
+							case 2: //random
+								iPlotScore = iRating;
+								break;
+							case 3: //heuristic greedy/turns
+								iPlotScore = iRating;
+								break;
+							case 4: //distance circle
+								iPlotScore = iRating;
+								break;
+							case 5: 
+								iPlotScore = iRating;
+								break;
+							case 6: 
+								iPlotScore = iRating;
+								break;
+							default:
+								break;
+							}
+
+#else
+								iPlotScore = 1000 * iRating;
+#endif
+
 						}
 						else
 						{
-							// not a valid destination
-							continue;
-						}
-					}
-/*//JR_MODS
 #if defined(JR_DLL)
-					if(pUnit->GetAutomateToggle() != 0)
-						pUnit->SetJScore(iBestPlotScore);
-#endif
-*/
-#endif
-				}
+							switch(pUnit->GetAutomateToggle())
+							{
+							case 0:
+								iPlotScore = (1000 * iRating) / iEstimateTurns;
+								break;
+							case 1: //greedy
+								iPlotScore = iRating;
+								break;
+							case 2: //random
+								iPlotScore = iRating;
+								break;
+							case 3: //heuristic greedy/turns
+								iPlotScore = (float) iRating/ (float) iEstimateTurns;
+								break;
+							case 4: //distance circle
+								iPlotScore = (float) iRating/ (float) iEstimateTurns;
+								break;
+							case 5: 
+								iPlotScore = iRating;
+								break;
+							case 6: 
+								iPlotScore = iRating;
+								break;
+							default:
+								break;
+							}
 
-#if defined(PATH_PLAN_LAST)
-				if ((uiListSize = aBestPlotList.size()) > 0)
-				{
-					aBestPlotList.SortItems();		// Highest score will be first.
-					for (uint i = 0; i < uiListSize ; ++i )	
-					{
-						CvPlot* pPlot = aBestPlotList.GetElement(i);
-						bool bCanFindPath = GC.getPathFinder().GenerateUnitPath(pUnit.pointer(), iUnitX, iUnitY, pPlot->getX(), pPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
+#else
+								iPlotScore = (1000 * iRating)/iEstimateTurns;
+#endif				
+
+						}
+
+						aBestPlotList.push_back(pEvalPlot, iPlotScore);
+#else
+						// hitting the path finder, may not be the best idea. . .
+						bool bCanFindPath = GC.getPathFinder().GenerateUnitPath(pUnit.pointer(), iUnitX, iUnitY, pEvalPlot->getX(), pEvalPlot->getY(),  MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
+
 						if(!bCanFindPath)
 						{
 							continue;
 						}
 
-						CvPlot* pEndTurnPlot = GC.getPathFinder().GetPathEndTurnPlot();
-						if(pEndTurnPlot == pUnit->plot())
+						CvAStarNode* pNode = GC.getPathFinder().GetLastNode();
+						int iDistance = pNode->m_iData2;
+						if(iDistance == 0)
 						{
-							continue;
-						}
-						else if(IsValidExplorerEndTurnPlot(pUnit.pointer(), pEndTurnPlot))
-						{
-							pBestPlot = pEndTurnPlot;
+#if defined(JR_DLL)
+							switch(pUnit->GetAutomateToggle())
+							{
+							case 0:
+								iPlotScore = 1000 * iDistance;
+								break;
+							case 1: //greedy
+								iPlotScore = iRating;
+								break;
+							case 2: //random
+								iPlotScore = iRating;
+								break;
+							case 3: //heuristic greedy/turns
+								iPlotScore = iRating;
+								break;
+							case 4: //distance circle
+								iPlotScore = iRating;
+								break;
+							case 5:
+								iPlotScore = iRating;
+								break;
+							case 6: 
+								iPlotScore = iRating;
+								break;
+							default:
+								break;
+							}
 
-							break;
+#else
+								iPlotScore = 1000 * iDistance;
+#endif
+
 						}
 						else
 						{
-							// not a valid destination
-							continue;
-						}
-					}
-				}
-#endif
-			}
-		}
+#if defined(JR_DLL)
+							switch(pUnit->GetAutomateToggle())
+							{
+							case 0:
+								iPlotScore = (1000 * iRating) / iDistance;
+								break;
+							case 1: //greedy
+								iPlotScore = iRating;
+								break;
+							case 2: //random
+								iPlotScore = iRating;
+								break;
+							case 3: //heuristic greedy/turns
+								iPlotScore = (float) iRating/ (float) iDistance;
+								break;
+							case 4: //distance circle
+								iPlotScore = (float) iRating/ (float) iDistance;
+								break;
+							case 5:
+								iPlotScore = iRating;
+								break;
+							case 6: 
+								iPlotScore = iRating;
+								break;
+							default:
+								break;
+							}
 
+#else
+								iPlotScore = (1000 * iRating)/iDistance;
+#endif	
+
+#if defined(JR_DLL)
+						if(iPlotScore > iBestPlotScore)
+							
+						
+						list<DirectionTypes> currPath;
+
+
+#else
+
+						if(iPlotScore > iBestPlotScore)
+#endif
+						{
+							CvPlot* pEndTurnPlot = GC.getPathFinder().GetPathEndTurnPlot();
+							if(pEndTurnPlot == pUnit->plot())
+							{
+								pBestPlot = NULL;
+								iBestPlotScore = iPlotScore;
+							}
+							else if(IsValidExplorerEndTurnPlot(pUnit.pointer(), pEndTurnPlot))
+							{
+//JR_MODS
+#if defined(JR_DLL)
+								if(pUnit->GetAutomateToggle() == 5 || pUnit->GetAutomateToggle() == 6)
+								{
+									GC.getPathFinder().GetPathDirections(currPath);
+									if(CvPlot::comparePlots(pUnit.pointer(),bestPath,currPath))
+									{
+										pBestPlot = pEndTurnPlot;
+										bestPath = currPath;
+										iBestPlotScore = iPlotScore;
+										pBestTarget = pPlot;
+									}
+								}
+								else{
+#endif
+								pBestPlot = pEndTurnPlot;
+								iBestPlotScore = iPlotScore;
+#if defined(JR_DLL)
+									}
+#endif
+							}
+							else
+							{
+								// not a valid destination
+								continue;
+							}
+						}
+/*//JR_MODS
+#if defined(JR_DLL)
+						if(pUnit->GetAutomateToggle() != 0)
+							pUnit->SetJScore(iBestPlotScore);
+#endif
+*/
+#endif
+					}
+
+#if defined(PATH_PLAN_LAST)
+
+						if ((uiListSize = aBestPlotList.size()) > 0)
+						{
+
+							aBestPlotList.SortItems();		// Highest score will be first.
+							for (uint i = 0; i < uiListSize ; ++i )	
+							{
+
+								CvPlot* pPlot = aBestPlotList.GetElement(i);
+#if defined(JR_DLL)
+								list<DirectionTypes> currPath;
+																
+#endif
+								bool bCanFindPath = GC.getPathFinder().GenerateUnitPath(pUnit.pointer(), iUnitX, iUnitY, pPlot->getX(), pPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
+								if(!bCanFindPath)
+								{
+									continue;
+								}
+
+								CvPlot* pEndTurnPlot = GC.getPathFinder().GetPathEndTurnPlot();
+								if(pEndTurnPlot == pUnit->plot())
+								{
+									continue;
+								}
+								else if(IsValidExplorerEndTurnPlot(pUnit.pointer(), pEndTurnPlot))
+								{
+//JR_MODS
+#if defined(JR_DLL)
+									if(pUnit->GetAutomateToggle() == 5 || pUnit->GetAutomateToggle() == 6)
+									{
+										GC.getPathFinder().GetPathDirections(currPath);
+										if(CvPlot::comparePlots(pUnit.pointer(),bestPath,currPath))
+										{
+											pBestPlot = pEndTurnPlot;
+											bestPath = currPath;
+											pBestTarget = pPlot;
+										}
+									}
+									else{
+#endif
+										pBestPlot = pEndTurnPlot;
+										break;
+#if defined(JR_DLL)
+									}
+#endif
+								
+								}
+								else
+								{
+									// not a valid destination
+									continue;
+								}
+							}
+						}
+
+
+#endif
+				}
+			}
+#if defined(JR_DLL) //ends the if unit didnt already have a valid destination
+		}
+#endif
 		if(pBestPlot)
 		{
 			CvAssertMsg(!pUnit->atPlot(*pBestPlot), "Exploring unit is already at the best place to explore");
 //JR_MODS
 #if defined(JR_DLL)
 			fstream log;
+			string gameType = to_string(CvPreGame::gameMapType()) + to_string(GC.getMap().getWorldSize());
+			/*DirectionTypes newDirection = directionXY(pUnit->plot()->getX(),pUnit->plot()->getY(),pBestPlot->getX(), pBestPlot->getY());
+			DirectionTypes newDirectionLeftUp = (newDirection == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirection -1);
+			DirectionTypes newDirectionLeft = (newDirectionLeftUp == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionLeftUp -1);
+			DirectionTypes newDirectionLeftDown = (newDirectionLeft == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionLeft -1);
+			DirectionTypes newDirectionRightDown = (newDirectionLeftDown == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionLeftDown -1);
+			DirectionTypes newDirectionRight = (newDirectionRightDown == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionRightDown -1);
+			
+			CvPlot* visitedPlotL = plotDirection(pUnit->plot()->getX(), pUnit->plot()->getY(), newDirectionLeft);
+			CvPlot* visitedPlotLD = plotDirection(pUnit->plot()->getX(), pUnit->plot()->getY(), newDirectionLeftDown);
+			CvPlot* visitedPlotRD = plotDirection(pUnit->plot()->getX(), pUnit->plot()->getY(), newDirectionRightDown);
+			CvPlot* visitedPlots [] = {visitedPlotL,visitedPlotLD,visitedPlotRD};
+
+			CvPlot* obstaclePlotL = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionLeft);
+			CvPlot* obstaclePlotLU = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionLeftUp);
+			CvPlot* obstaclePlot = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirection);
+			CvPlot* obstaclePlotRD = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionRightDown);
+			CvPlot* obstaclePlotR = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionRight);
+			CvPlot* obstacles [] = {obstaclePlotL,obstaclePlotLU,obstaclePlot};
+			bool atTheEnd = false;*/
 			switch(pUnit->GetAutomateToggle())
 			{
 				case 0:
-					log.open("../Default/runs.csv",fstream::app|fstream::out);
+					if(GC.getGame().getElapsedGameTurns() == 0)
+					{
+						log.open(("../Default/" + gameType + "run" + to_string(fileNumber("../Default/" + gameType + "run",".csv")) + ".csv").c_str(),fstream::app|fstream::out);
+					}
+					else {
+						log.open(("../Default/" + gameType + "run" + to_string(fileNumber("../Default/" + gameType + "run",".csv") - 1) + ".csv").c_str(),fstream::app|fstream::out);
+					}
 					break;
 				case 1:
 					pUnit->SetJScore(CvEconomicAI::ScoreExplorePlotGreedy(pBestPlot, eTeam, iBaseSightRange, pUnit->getDomainType()));
-					log.open("../Greedy/runs.csv",fstream::app|fstream::out);
+					if(GC.getGame().getElapsedGameTurns() == 0)
+					{
+						log.open(("../Greedy/" + gameType + "run" + to_string(fileNumber("../Greedy/" + gameType + "run",".csv")) + ".csv").c_str(),fstream::app|fstream::out);
+					}
+					else {
+						log.open(("../Greedy/" + gameType + "run" + to_string(fileNumber("../Greedy/" + gameType + "run",".csv")-1) + ".csv").c_str(),fstream::app|fstream::out);
+					}
 					break;
 				case 2:
-					log.open("../Random/runs.csv",fstream::app|fstream::out);
+					if(GC.getGame().getElapsedGameTurns() == 0)
+					{
+						log.open(("../Random/" + gameType + "run" + to_string(fileNumber("../Random/" + gameType + "run",".csv")) + ".csv").c_str(),fstream::app|fstream::out);
+					}
+					else{
+						log.open(("../Random/" + gameType + "run" + to_string(fileNumber("../Random/" + gameType + "run",".csv")-1) + ".csv").c_str(),fstream::app|fstream::out);
+					}
+					break;
+				case 3:
+					if(GC.getGame().getElapsedGameTurns() == 0)
+					{
+						log.open(("../Heuristic/" + gameType + "run" + to_string(fileNumber("../Heuristic/" + gameType + "run",".csv")) + ".csv").c_str(),fstream::app|fstream::out);
+					}
+					else{
+						log.open(("../Heuristic/" + gameType + "run" + to_string(fileNumber("../Heuristic/" + gameType + "run",".csv")-1) + ".csv").c_str(),fstream::app|fstream::out);
+					}
+					break;
+				case 4:
+					if(GC.getGame().getElapsedGameTurns() == 0)
+					{
+						log.open(("../Perimeter/" + gameType + "run" + to_string(fileNumber("../Perimeter/" + gameType + "run",".csv")) + ".csv").c_str(),fstream::app|fstream::out);
+					}
+					else{
+						log.open(("../Perimeter/" + gameType + "run" + to_string(fileNumber("../Perimeter/" + gameType + "run",".csv")-1) + ".csv").c_str(),fstream::app|fstream::out);
+					}
+					break;
+				case 5: //broken
+					if(GC.getGame().getElapsedGameTurns() == 0)
+					{
+						log.open(("../Direction/" + gameType + "run" + to_string(fileNumber("../Direction/" + gameType + "run",".csv")) + ".csv").c_str(),fstream::app|fstream::out);
+						//set current plot and adjacent to be visited
+						
+						pUnit->plot()->setVisited();
+					}
+					else{
+						log.open(("../Direction/" + gameType + "run" + to_string(fileNumber("../Direction/" + gameType + "run",".csv")-1) + ".csv").c_str(),fstream::app|fstream::out);
+					}
+					
+					//we need to consider if we are at the end of the world.
+					//if(atTheEnd) //was at the end so try to turn
+					/*if(pUnit->GetAtEnd())
+					{
+						pUnit->SetOrientation(newDirectionLeftUp);
+						pUnit->SetPrevDirection(newDirectionLeftUp);
+						if(!pBestPlot->isOnFrontier(newDirection,eTeam,true))
+						{
+							pUnit->SetAtEnd(false);
+						}
+					}
+					else {
+						if(pBestPlot->isOnFrontier(newDirection,eTeam,false))
+						{
+							pUnit->SetOrientation(newDirectionLeftUp);
+							pUnit->SetPrevDirection(newDirectionLeftUp);
+							pUnit->SetAtEnd(true);
+						}
+						else {
+							pUnit->SetOrientation(newDirection);
+							pUnit->SetPrevDirection(newDirection);
+						}
+					}
+					
+					pUnit->SetPrevDestination(pBestTarget);
+					
+					pBestTarget->setVisited();*/
+					break;
+				case 6:
+					if(GC.getGame().getElapsedGameTurns() == 0)
+					{
+						log.open(("../DirectionLocal/" + gameType + "run" + to_string(fileNumber("../DirectionLocal/" + gameType + "run",".csv")) + ".csv").c_str(),fstream::app|fstream::out);
+						//set current plot and adjacent to be visited
+						pUnit->SetAtEnd(false);
+						pUnit->SetAtMiddle(false);
+						//pUnit->plot()->setVisited();
+					}
+					else{
+						log.open(("../DirectionLocal/" + gameType + "run" + to_string(fileNumber("../DirectionLocal/" + gameType + "run",".csv")-1) + ".csv").c_str(),fstream::app|fstream::out);
+					}
+					
+		
+					/*FSM 3 states 
+					1) find end
+					2) At end
+					3) at middle*/
+					
+					//middle
+					if(pUnit->GetAtMiddle())
+					{
+						pUnit->SetAtMiddle(findEnd(pUnit.pointer(),pBestPlot,false));
+					}
+					//at end
+					else if(pUnit->GetAtEnd())
+					{
+						//transition to middle
+						if(pEconomicAI->GetJRNumberOfEndExplorePoints() == 0)
+						{
+							//find new interior perimeter
+							pUnit->SetAtMiddle(findEnd(pUnit.pointer(),pBestPlot,false));
+						}
+						else
+						{
+							pUnit->SetAtEnd(findEnd(pUnit.pointer(),pBestPlot,true));
+						}
+					}
+					//find end of the world (perimeter)
+					else{
+						pUnit->SetAtEnd(findEnd(pUnit.pointer(), pBestPlot, true));
+					}	
+						
+	
+					
+					pUnit->SetPrevDestination(pBestTarget);
+					//mark stuff as visited
+					/*if(visitedPlotL)
+					{
+						visitedPlotL->setVisited();
+					}
+					if(visitedPlotLD)
+					{
+						visitedPlotLD->setVisited();
+					}*/
+					pUnit->plot()->setVisited();
 					break;
 				default:
 					break;
 			}
-			log << GC.getGame().getElapsedGameTurns() << "," << pEconomicAI->GetJRNumberOfRevealed() << endl;
+			log << GC.getGame().getElapsedGameTurns() << "," << pEconomicAI->GetJRNumberOfRevealed() << "," << (float)pEconomicAI->GetJRNumberOfRevealed()/(float)GC.getMap().getLandPlots() << "," << pEconomicAI->GetJRNumberOfEndExplorePoints()<< endl;
 			log.close();
 #endif
 			pUnit->PushMission(CvTypes::getMISSION_MOVE_TO(), pBestPlot->getX(), pBestPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER, false, false, MISSIONAI_EXPLORE, pBestPlot);
@@ -2698,7 +3119,92 @@ void CvHomelandAI::ExecuteExplorerMoves()
 		}
 	}
 }
-
+//JR_MODS
+#if defined(JR_DLL)
+bool CvHomelandAI::findEnd(CvUnit* pUnit, CvPlot* pBestPlot, bool lookingForPerimeter)
+{
+	DirectionTypes newDirection = directionXY(pUnit->plot()->getX(),pUnit->plot()->getY(),pBestPlot->getX(), pBestPlot->getY());
+	DirectionTypes newDirectionLeftUp = (newDirection == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirection -1);
+	DirectionTypes newDirectionLeft = (newDirectionLeftUp == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionLeftUp -1);
+	DirectionTypes newDirectionLeftDown = (newDirectionLeft == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionLeft -1);
+	DirectionTypes newDirectionRightDown = (newDirectionLeftDown == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionLeftDown -1);
+	DirectionTypes newDirectionRight = (newDirectionRightDown == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionRightDown -1);
+	
+	CvPlot* obstaclePlotL = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionLeft);
+	CvPlot* obstaclePlotLU = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionLeftUp);
+	CvPlot* obstaclePlot = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirection);
+	CvPlot* obstaclePlotRD = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionRightDown);
+	CvPlot* obstaclePlotR = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionRight);
+	if(pUnit->GetAtEnd())
+	{
+		pUnit->SetOrientation(newDirectionLeftUp);
+		pUnit->SetPrevDirection(newDirectionLeftUp);
+		return true;
+	}
+	else if(obstaclePlotRD->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter))
+	{
+		pUnit->SetOrientation(newDirectionRightDown);
+		pUnit->SetPrevDirection(newDirectionRightDown);
+		return true;
+	}
+	else if(obstaclePlotR->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter))
+	{
+		pUnit->SetOrientation(newDirectionRight);
+		pUnit->SetPrevDirection(newDirectionRight);
+		return true;
+	}
+	else if(obstaclePlot->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter))
+	{
+		pUnit->SetOrientation(newDirection);
+		pUnit->SetPrevDirection(newDirection);
+		return true;
+	}
+	else if(obstaclePlotL->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter))
+	{
+		pUnit->SetOrientation(newDirectionLeft);
+		pUnit->SetPrevDirection(newDirectionLeft);
+		return true;
+	}
+	else if(obstaclePlotLU->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter))
+	{
+		pUnit->SetOrientation(newDirectionLeftUp);
+		pUnit->SetPrevDirection(newDirectionLeftUp);
+		return true;
+	}
+	else{
+		if(lookingForPerimeter)
+		{
+			pUnit->SetOrientation(DIRECTION_NORTHEAST);
+			pUnit->SetPrevDirection(DIRECTION_NORTHEAST);
+			return false;
+		}
+		else{
+			pUnit->SetOrientation(newDirectionLeftUp);
+			pUnit->SetPrevDirection(newDirectionLeftUp);
+			return false;
+		}
+	}
+	
+}
+//increment file name
+int CvHomelandAI::fileNumber(string pathToFile,string extension)
+{
+	int counter = 0;
+	while(FILE *file = fopen((pathToFile + to_string(counter) + extension).c_str(),"r"))
+	{
+		fclose(file);
+		counter ++;
+	}
+	return counter;
+}
+template <typename T>
+string CvHomelandAI::to_string(T value)
+{
+	std::ostringstream os ;
+	os << value ;
+	return os.str() ;
+}
+#endif
 /// Moves units to explore the map
 void CvHomelandAI::ExecuteWorkerMoves()
 {

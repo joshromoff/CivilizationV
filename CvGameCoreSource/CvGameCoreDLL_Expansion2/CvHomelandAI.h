@@ -198,7 +198,13 @@ public:
 	void Init(CvPlayer* pPlayer);
 	void Uninit();
 	void Reset();
-
+//JR_MODS
+#if defined(JR_DLL)
+	int fileNumber(string pathToFile, string extension);
+	template <typename T>
+	string to_string(T value);
+	bool findEnd(CvUnit* pUnit, CvPlot* pBestPlot, bool lookingForPerimeter);
+#endif
 	// Serialization routines
 	void Read(FDataStream& kStream);
 	void Write(FDataStream& kStream);
@@ -303,6 +309,7 @@ private:
 	bool ExecuteCultureBlast(CvUnit* pUnit);
 	bool ExecuteGoldenAgeMove(CvUnit* pUnit);
 	bool IsValidExplorerEndTurnPlot(const CvUnit* pUnit, CvPlot* pPlot) const;
+
 	bool GetClosestUnitByTurnsToTarget(MoveUnitsArray &kMoveUnits, CvPlot* pTarget, int iMaxTurns, CvUnit** ppClosestUnit, int* piClosestTurns);
 	void ClearCurrentMoveUnits();
 	void ClearCurrentMoveHighPriorityUnits();

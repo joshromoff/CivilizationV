@@ -137,7 +137,10 @@ public:
 	CvPlot* getNearestLandPlotInternal(int iDistance) const;
 	int getNearestLandArea() const;
 	CvPlot* getNearestLandPlot() const;
-
+#if defined(JR_DLL)
+	static CvPlot* getBestPlot(CvUnit* pUnit,FFastVector<int> frontier);
+	static bool comparePlots(CvUnit* pUnit,list<DirectionTypes> ankorToPlot1, list<DirectionTypes> ankorToPlot2);
+#endif
 	int seeFromLevel(TeamTypes eTeam) const;
 	int seeThroughLevel(bool bIncludeShubbery=true) const;
 	void changeSeeFromSight(TeamTypes eTeam, DirectionTypes eDirection, int iFromLevel, bool bIncrement, InvisibleTypes eSeeInvisible);
@@ -589,6 +592,15 @@ public:
 	}
 
 	bool setRevealed(TeamTypes eTeam, bool bNewValue, bool bTerrainOnly = false, TeamTypes eFromTeam = NO_TEAM);
+//JR_MODS
+#if defined(JR_DLL)
+	bool hasAdjacentCoastal(TeamTypes eTeam) const;
+	bool isVisited() const;
+	void setVisited();
+	bool isAtTheEnd(TeamTypes eTeam, bool perimeter) const;
+	bool isOnFrontier(DirectionTypes forward,TeamTypes eTeam,bool atEnd) const;
+	bool isWorthIt(TeamTypes eTeam);
+#endif
 	bool isAdjacentRevealed(TeamTypes eTeam) const;
 	bool isAdjacentNonrevealed(TeamTypes eTeam) const;
 	int getNumAdjacentNonrevealed(TeamTypes eTeam) const;
@@ -769,7 +781,10 @@ protected:
 	short* m_aiVisibilityCount;
 	char* m_aiRevealedOwner;
 	//bool *m_abRevealed;
-
+//JR_MODS
+#if defined(JR_DLL)
+	bool m_visited;
+#endif
 	short /*ImprovementTypes*/ *m_aeRevealedImprovementType;
 	short /*RouteTypes*/ *m_aeRevealedRouteType;
 	bool* m_abNoSettling;

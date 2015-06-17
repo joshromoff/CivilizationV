@@ -1277,8 +1277,93 @@ CvPlot* CvPlot::getNearestLandPlot() const
 {
 	return getNearestLandPlotInternal(0);
 }
+//JR_MODS
+#if defined(JR_DLL)
+CvPlot* CvPlot::getBestPlot(CvUnit* pUnit, FFastVector<int> frontier)
+{
+	//unit plot
+	CvPlot* ankor = pUnit->plot();
+	//set the best plot to be the first plot of the frontier
+	CvPlot* bestPlot = GC.getMap().plotByIndex(frontier.front());
+	//will contain the best plots path
+	list<DirectionTypes> bestPath;
+	
+	for(uint i = 0; i < frontier.size(); i++)
+	{
+		CvPlot* currPlot = GC.getMap().plotByIndex(frontier[i]);
+		list<DirectionTypes> currPath;
+		bool bCanFindPath = GC.getPathFinder().GenerateUnitPath(pUnit,ankor->getX(), ankor->getY(), currPlot->getX(), currPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
+		if(bCanFindPath)
+		{
+			//if we found a path 
+			CvPlot* pEndTurnPlot = GC.getPathFinder().GetPathEndTurnPlot();
+			//if its the same plot... dont make the list
+			if(!pUnit->atPlot(*pEndTurnPlot))
+			{
+				//if its a valid end turn plot
+				//#############add eis valid end turn plot
+				GC.getPathFinder().GetPathDirections(currPath);
+				if(comparePlots(pUnit,bestPath,currPath))
+				{
+					bestPlot = pEndTurnPlot;
+					bestPath = currPath;
+				}
+			}
+		}
+	}
+	if(bestPath.empty())
+		return NULL;
+	return bestPlot;
+}
+/*northeast>east>southeast>southwest>west>northwest>north> returns true if ankortoplot2 is better*/
+bool CvPlot::comparePlots(CvUnit* pUnit,list<DirectionTypes> ankorToPlot1, list<DirectionTypes> ankorToPlot2)
+{
+	//multiplier to determine clockwise or ccw
+	//int multiplier = (pUnit->GetClock()) ? 1 : - 1;
+	//starting direction for sorting
+	int startingDirection = pUnit->GetOrientation(); //* multiplier;
+	
+	//if one list is empty return the other plot, if both empty return null
+	if(ankorToPlot1.size() == 0 && ankorToPlot2.size() != 0) return true;
+	if(ankorToPlot2.size() == 0 && ankorToPlot1.size() != 0) return false;
+	if(ankorToPlot1.size() == 0 && ankorToPlot2.size() == 0) return false;
 
+	//loop through the size of the shorter list
+	list<DirectionTypes>::iterator it1 = ankorToPlot1.begin();
+	list<DirectionTypes>::iterator it2 = ankorToPlot2.begin();
+	for(;it1 != ankorToPlot1.end() && it2 != ankorToPlot2.end(); it1++, it2++)
+	{
+		if(*it1 == *it2)
+		{
+			if (ankorToPlot1.size() < ankorToPlot2.size())
+			{
+				return false;
+			}
+			else if(ankorToPlot2.size() < ankorToPlot1.size())
+			{
+				return true;		
+			}
+			else 
+				continue;
+			//continue;
 
+		}
+		if(*it1 >= startingDirection && *it2 < startingDirection)
+		{
+			return false;
+		}
+		if(*it2 >= startingDirection && *it1 < startingDirection)
+		{
+			return true;
+		}
+		return (*it2<*it1);
+	}
+	//havent found a path yet so return the shorter one
+	return (ankorToPlot1.size() <= ankorToPlot2.size()) ? false : true;
+
+}
+
+#endif
 //	--------------------------------------------------------------------------------
 int CvPlot::seeFromLevel(TeamTypes eTeam) const
 {
@@ -7837,7 +7922,101 @@ TeamTypes CvPlot::getRevealedTeam(TeamTypes eTeam) const
 		return NO_TEAM;
 	}
 }
+//JR_MODS
+#if defined(JR_DLL)
+bool CvPlot::hasAdjacentCoastal(TeamTypes eTeam) const
+{
+	for(int iI = 0; iI < NUM_DIRECTION_TYPES; ++iI)
+	{
+		CvPlot* pAdjacentPlot = plotDirection(getX(), getY(), ((DirectionTypes)iI));
 
+		if(pAdjacentPlot != NULL)
+		{
+			if(pAdjacentPlot->isCoastalLand() && pAdjacentPlot->isRevealed(eTeam))
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+bool CvPlot::isVisited() const
+{
+	return m_visited;
+}
+void CvPlot::setVisited()
+{
+	m_visited = true;
+}
+bool CvPlot::isAtTheEnd(TeamTypes eTeam, bool perimeter) const
+{
+	if(perimeter)
+	{
+		if(isCoastalLand())
+		{
+			return true;
+		}
+	}
+	else{
+		if(this->getNumAdjacentNonrevealed(eTeam) > 0)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+bool CvPlot::isWorthIt(TeamTypes eTeam) 
+{
+	int counter = 0;
+	for(int iI = 0; iI < NUM_DIRECTION_TYPES; ++iI)
+	{
+		CvPlot* pAdjacentPlot = plotDirection(getX(), getY(), ((DirectionTypes)iI));
+
+		if(pAdjacentPlot != NULL)
+		{
+			if(!pAdjacentPlot->isImpassable() && !pAdjacentPlot->isWater() && !pAdjacentPlot->isMountain() && !pAdjacentPlot->isVisited())
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+
+}
+//returns true if the plot borders end plots to its left.
+bool CvPlot::isOnFrontier(DirectionTypes forward, TeamTypes eTeam, bool atEnd) const
+{
+	if(isCoastalLand())
+	{
+		return true;
+	}
+	for(int i = 0; i < NUM_DIRECTION_TYPES; ++i)
+	{
+		CvPlot* pEvalPlot = plotDirection(this->getX(), this->getY(), ((DirectionTypes)i));
+		if(pEvalPlot)
+		{
+			if(pEvalPlot->isCoastalLand() || pEvalPlot->isVisited() || pEvalPlot->isWater())
+			{
+				return true;
+			}
+			/*for(int j = 0; j < NUM_DIRECTION_TYPES; ++j)
+			{
+				CvPlot* pEvalPlot2 = plotDirection(pEvalPlot->getX(), pEvalPlot->getY(), ((DirectionTypes)j));
+				if(pEvalPlot2)
+				{
+					if(pEvalPlot->isCoastalLand() || pEvalPlot->isVisited())
+					{
+						return true;
+					}
+				}
+			}*/
+		}
+	}
+	
+	return false;
+
+}
+#endif
 
 //	--------------------------------------------------------------------------------
 bool CvPlot::setRevealedOwner(TeamTypes eTeam, PlayerTypes eNewValue)

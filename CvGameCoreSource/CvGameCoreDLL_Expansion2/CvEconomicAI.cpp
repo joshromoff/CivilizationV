@@ -305,12 +305,33 @@ void CvEconomicAI::Reset()
 	}
 //JR_MODS
 #if defined(JR_DLL)
-	for(uint ui = 0; ui < m_aiJRExplorationPlots.size(); ui++)
+	for(uint ui = 0; ui < m_ExplorationPlotsDirection.size(); ui++)
 	{
-		m_aiJRExplorationPlots[ui] = -1;
-		m_aiJRExplorationPlotRatings[ui] = -1;
+		m_ExplorationPlotsDirection[ui] = -1;
+		m_ExplorationPlotRatingsDirection[ui] = -1;
+	}
+	for(uint ui = 0; ui < m_ExplorationPlotsGreedy.size(); ui++)
+	{
+		m_ExplorationPlotsGreedy[ui] = -1;
+		m_ExplorationPlotRatingsGreedy[ui] = -1;
+	}
+	for(uint ui = 0; ui < m_ExplorationPlotsRandom.size(); ui++)
+	{
+		m_ExplorationPlotsRandom[ui] = -1;
+		m_ExplorationPlotRatingsRandom[ui] = -1;
+	}
+	for(uint ui = 0; ui < m_ExplorationPlotsHeuristic.size(); ui++)
+	{
+		m_ExplorationPlotsHeuristic[ui] = -1;
+		m_ExplorationPlotRatingsHeuristic[ui] = -1;
+	}
+	for(uint ui = 0; ui < m_ExplorationPlotsDistance.size(); ui++)
+	{
+		m_ExplorationPlotsDistance[ui] = -1;
+		m_ExplorationPlotRatingsDistance[ui] = -1;
 	}
 	m_JRNumberOfRevealed = 0;
+	m_JRNumberOfEndExplorePoints = 0;
 #endif
 	for(uint ui = 0; ui < m_aiExplorationPlots.size(); ui++)
 	{
@@ -387,17 +408,34 @@ void CvEconomicAI::Read(FDataStream& kStream)
 
 #define MAX_PLOT_ARRAY_SIZE	((152+1)*(96+1))
 	int iMaxEntriesToRead = MIN(MAX_PLOT_ARRAY_SIZE, iEntriesToRead);
-//JR_Mods
+/*//JR_Mods
 #if defined(JR_DLL)
-	m_aiJRExplorationPlots.resize(iMaxEntriesToRead);
-	m_aiJRExplorationPlotRatings.resize(iMaxEntriesToRead);
+	m_ExplorationPlotsGreedy.resize(iMaxEntriesToRead);
+	m_ExplorationPlotRatingsGreedy.resize(iMaxEntriesToRead);
 
 	for(int i = 0; i < iMaxEntriesToRead; i++)
 	{
-		kStream >> m_aiJRExplorationPlots[i];
-		kStream >> m_aiJRExplorationPlotRatings[i];
+		kStream >> m_ExplorationPlotsGreedy[i];
+		kStream >> m_ExplorationPlotRatingsGreedy[i];
+	}
+	m_ExplorationPlotsRandom.resize(iMaxEntriesToRead);
+	m_ExplorationPlotRatingsRandom.resize(iMaxEntriesToRead);
+
+	for(int i = 0; i < iMaxEntriesToRead; i++)
+	{
+		kStream >> m_ExplorationPlotsRandom[i];
+		kStream >> m_ExplorationPlotRatingsRandom[i];
+	}
+	m_ExplorationPlotsHeuristic.resize(iMaxEntriesToRead);
+	m_ExplorationPlotRatingsHeuristic.resize(iMaxEntriesToRead);
+
+	for(int i = 0; i < iMaxEntriesToRead; i++)
+	{
+		kStream >> m_ExplorationPlotsHeuristic[i];
+		kStream >> m_ExplorationPlotRatingsHeuristic[i];
 	}
 #endif
+	*/
 	m_aiExplorationPlots.resize(iMaxEntriesToRead);
 	m_aiExplorationPlotRatings.resize(iMaxEntriesToRead);
 
@@ -470,15 +508,27 @@ void CvEconomicAI::Write(FDataStream& kStream)
 	}
 
 	kStream << m_bExplorationPlotsDirty;
-//JR_MODS
+/*//JR_MODS
 #if defined(JR_DLL)
-	kStream << m_aiJRExplorationPlots.size();
-	for(uint ui = 0; ui < m_aiJRExplorationPlots.size(); ui++)
+	kStream << m_ExplorationPlotsGreedy.size();
+	for(uint ui = 0; ui < m_ExplorationPlotsGreedy.size(); ui++)
 	{
-		kStream << m_aiJRExplorationPlots[ui];
-		kStream << m_aiJRExplorationPlotRatings[ui];
+		kStream << m_ExplorationPlotsGreedy[ui];
+		kStream << m_ExplorationPlotRatingsGreedy[ui];
 	}
-#endif
+	kStream << m_ExplorationPlotsRandom.size();
+	for(uint ui = 0; ui < m_ExplorationPlotsRandom.size(); ui++)
+	{
+		kStream << m_ExplorationPlotsRandom[ui];
+		kStream << m_ExplorationPlotRatingsRandom[ui];
+	}
+	kStream << m_ExplorationPlotsHeuristic.size();
+	for(uint ui = 0; ui < m_ExplorationPlotsHeuristic.size(); ui++)
+	{
+		kStream << m_ExplorationPlotsHeuristic[ui];
+		kStream << m_ExplorationPlotRatingsHeuristic[ui];
+	}
+#endif*/
 	kStream << m_aiExplorationPlots.size();
 	for(uint ui = 0; ui < m_aiExplorationPlots.size(); ui++)
 	{
@@ -909,28 +959,106 @@ void AppendToLog(CvString& strHeader, CvString& strLog, CvString strHeaderValue,
 
 //JR_MODS
 #if defined(JR_DLL)
-FFastVector<int>& CvEconomicAI::GetJRExplorationPlots()
+FFastVector<int>& CvEconomicAI::GetExplorationPlotsDirection()
 {
 	if(m_bExplorationPlotsDirty)
 	{
 		UpdatePlots();
 	}
 
-	return m_aiJRExplorationPlots;
+	return m_ExplorationPlotsDirection;
+}
+FFastVector<int>& CvEconomicAI::GetExplorationPlotRatingsDirection()
+{
+	if(m_bExplorationPlotsDirty)
+	{
+		UpdatePlots();
+	}
+	
+	return m_ExplorationPlotRatingsDirection;
+}
+FFastVector<int>& CvEconomicAI::GetExplorationPlotsDistance()
+{
+	if(m_bExplorationPlotsDirty)
+	{
+		UpdatePlots();
+	}
+
+	return m_ExplorationPlotsDistance;
+}
+FFastVector<int>& CvEconomicAI::GetExplorationPlotRatingsDistance()
+{
+	if(m_bExplorationPlotsDirty)
+	{
+		UpdatePlots();
+	}
+
+	return m_ExplorationPlotRatingsDistance;
+}
+FFastVector<int>& CvEconomicAI::GetExplorationPlotsGreedy()
+{
+	if(m_bExplorationPlotsDirty)
+	{
+		UpdatePlots();
+	}
+
+	return m_ExplorationPlotsGreedy;
 }
 
-FFastVector<int>& CvEconomicAI::GetJRExplorationPlotRatings()
+FFastVector<int>& CvEconomicAI::GetExplorationPlotRatingsGreedy()
 {
 	if(m_bExplorationPlotsDirty)
 	{
 		UpdatePlots();
 	}
 
-	return m_aiJRExplorationPlotRatings;
+	return m_ExplorationPlotRatingsGreedy;
+}
+FFastVector<int>& CvEconomicAI::GetExplorationPlotsRandom()
+{
+	if(m_bExplorationPlotsDirty)
+	{
+		UpdatePlots();
+	}
+
+	return m_ExplorationPlotsRandom;
+}
+
+FFastVector<int>& CvEconomicAI::GetExplorationPlotRatingsRandom()
+{
+	if(m_bExplorationPlotsDirty)
+	{
+		UpdatePlots();
+	}
+
+	return m_ExplorationPlotRatingsRandom;
+}
+FFastVector<int>& CvEconomicAI::GetExplorationPlotsHeuristic()
+{
+	if(m_bExplorationPlotsDirty)
+	{
+		UpdatePlots();
+	}
+
+	return m_ExplorationPlotsHeuristic;
+}
+
+FFastVector<int>& CvEconomicAI::GetExplorationPlotRatingsHeuristic()
+{
+	if(m_bExplorationPlotsDirty)
+	{
+		UpdatePlots();
+	}
+
+	return m_ExplorationPlotRatingsHeuristic;
 }
 int CvEconomicAI::GetJRNumberOfRevealed()
 {
 	return m_JRNumberOfRevealed;
+}
+int CvEconomicAI::GetJRNumberOfEndExplorePoints()
+{
+	return m_JRNumberOfEndExplorePoints;
 }
 #endif
 FFastVector<int>& CvEconomicAI::GetExplorationPlots()
@@ -1004,15 +1132,15 @@ void CvEconomicAI::ClearUnitTargetGoodyStepPlot(CvUnit* pUnit)
 }
 
 //JR_MODS
-//	---------------------------------------------------------------------------
-// returns the number of uncovered plots
-// assume flat plains perfect vision = radius of 2, i range is sight
-int CvEconomicAI::ScoreExplorePlotGreedy(CvPlot* pPlot, TeamTypes eTeam, int iRange, DomainTypes eDomainType)
+#if defined(JR_DLL)
+int CvEconomicAI::ScoreExplorePlotDistance(CvPlot* pPlot, TeamTypes eTeam, int iRange, DomainTypes eDomainType)
 {
-	int value  = 0;
+	
 	int iPlotX = pPlot->getX();
 	int iPlotY = pPlot->getY();
-
+	
+	int distance  = plotDistance(iPlotX,iPlotY,m_pPlayer->getStartingPlot()->getX(),m_pPlayer->getStartingPlot()->getY());
+	bool worthIt = false;
 	FAssertMsg(pPlot->isRevealed(eTeam), "Plot isn't revealed. This isn't good.");
 	CvPlot* pEvalPlot = NULL;
 	for(int iX = -iRange; iX <= iRange; iX++)
@@ -1028,19 +1156,111 @@ int CvEconomicAI::ScoreExplorePlotGreedy(CvPlot* pPlot, TeamTypes eTeam, int iRa
 			{
 				continue;
 			}
-			if(pEvalPlot->isRevealed(eTeam))
+
+			if(pEvalPlot->isWater() || pEvalPlot->isImpassable() || pEvalPlot->isRevealed(eTeam))
 			{
 				continue;
 			}
-			if(pPlot->canSeePlot(pEvalPlot, eTeam, iRange, NO_DIRECTION))
+			worthIt = true;
+			
+		}
+	}
+	if(worthIt)
+		distance += 1000;
+	
+	return distance;
+
+
+
+}
+int CvEconomicAI::ScoreExplorePlotHeuristic(CvPlot* pPlot, TeamTypes eTeam, int iRange, DomainTypes eDomainType)
+{
+	int value  = 0;
+	int iPlotX = pPlot->getX();
+	int iPlotY = pPlot->getY();
+
+	FAssertMsg(pPlot->isRevealed(eTeam), "Plot isn't revealed. This isn't good.");
+	//CvPlot* pEvalPlot = NULL;
+	/*for(int iX = -iRange; iX <= iRange; iX++)
+	{
+		for(int iY = -iRange; iY <= iRange; iY++)
+		{*/
+		for(int i = 0; i < NUM_DIRECTION_TYPES; ++i)
+		{
+			//pEvalPlot = plotXYWithRangeCheck(iPlotX, iPlotY, iX, iY, iRange);
+			CvPlot* pAdjacentPlot = plotDirection(pPlot->getX(), pPlot->getY(), ((DirectionTypes)i));
+			if(!pAdjacentPlot)
+			{
+				continue;
+			}
+			if(pAdjacentPlot == pPlot)
+			{
+				continue;
+			}
+			if(pAdjacentPlot->isRevealed(eTeam))
+			{
+				continue;
+			}
+			if(pAdjacentPlot->isWater() || pAdjacentPlot->isImpassable())
+			{
+				continue;
+			}
+			if(pPlot->canSeePlot(pAdjacentPlot, eTeam, iRange, NO_DIRECTION))
 			{
 				value++;
 			}
 		}
+		/*}
+	}*/
+	return value;
+
+
+
+}
+//	---------------------------------------------------------------------------
+// returns the number of uncovered plots
+// assume flat plains perfect vision = radius of 2, i range is sight
+int CvEconomicAI::ScoreExplorePlotGreedy(CvPlot* pPlot, TeamTypes eTeam, int iRange, DomainTypes eDomainType)
+{
+	int value  = 0;
+	int iPlotX = pPlot->getX();
+	int iPlotY = pPlot->getY();
+	bool nextToEnd = false;
+	FAssertMsg(pPlot->isRevealed(eTeam), "Plot isn't revealed. This isn't good.");
+	CvPlot* pEvalPlot = NULL;
+	/*for(int iX = -iRange; iX <= iRange; iX++)
+	{
+		for(int iY = -iRange; iY <= iRange; iY++)
+		{*/
+		for(int i = 0; i < NUM_DIRECTION_TYPES; ++i)
+		{
+			//pEvalPlot = plotXYWithRangeCheck(iPlotX, iPlotY, iX, iY, iRange);
+			CvPlot* pEvalPlot = plotDirection(pPlot->getX(), pPlot->getY(), ((DirectionTypes)i));
+			if(!pEvalPlot)
+			{
+				continue;
+			}
+			if(pEvalPlot == pPlot)
+			{
+				continue;
+			}
+			if(pEvalPlot->isRevealed(eTeam))
+			{
+				continue;
+			}
+			if(/*pEvalPlot->isWater() || pEvalPlot->isImpassable() || pEvalPlot->isMountain()||*/ pEvalPlot->isVisited())
+			{
+				continue;
+			}
+			value++;
+			
+		//}
+		//}
 	}
 	return value;
 
 }
+#endif
 //	---------------------------------------------------------------------------
 int CvEconomicAI::ScoreExplorePlot(CvPlot* pPlot, TeamTypes eTeam, int iRange, DomainTypes eDomainType)
 {
@@ -2354,10 +2574,35 @@ void CvEconomicAI::UpdatePlots()
 	// reset all plots
 //JR_MODS
 #if defined(JR_DLL)
-	for(uint ui = 0; ui < m_aiJRExplorationPlots.size(); ui++)
+	for(uint ui = 0; ui < m_ExplorationPlotsDirection.size(); ui++)
 	{
-		m_aiJRExplorationPlots[ui] = -1;
-		m_aiJRExplorationPlotRatings[ui] = -1;
+		m_ExplorationPlotsDirection[ui] = -1;
+		m_ExplorationPlotRatingsDirection[ui] = -1;
+	}
+	for(uint ui = 0; ui < m_ExplorationPlotsGreedy.size(); ui++)
+	{
+		m_ExplorationPlotsGreedy[ui] = -1;
+		m_ExplorationPlotRatingsGreedy[ui] = -1;
+	}
+	for(uint ui = 0; ui < m_ExplorationPlotsDirection.size(); ui++)
+	{
+		m_ExplorationPlotsDirection[ui] = -1;
+		m_ExplorationPlotRatingsDirection[ui] = -1;
+	}
+	for(uint ui = 0; ui < m_ExplorationPlotsRandom.size(); ui++)
+	{
+		m_ExplorationPlotsRandom[ui] = -1;
+		m_ExplorationPlotRatingsRandom[ui] = -1;
+	}
+	for(uint ui = 0; ui < m_ExplorationPlotsHeuristic.size(); ui++)
+	{
+		m_ExplorationPlotsHeuristic[ui] = -1;
+		m_ExplorationPlotRatingsHeuristic[ui] = -1;
+	}
+	for(uint ui = 0; ui < m_ExplorationPlotsDistance.size(); ui++)
+	{
+		m_ExplorationPlotsDistance[ui] = -1;
+		m_ExplorationPlotRatingsDistance[ui] = -1;
 	}
 #endif
 	for(uint ui = 0; ui < m_aiExplorationPlots.size(); ui++)
@@ -2394,15 +2639,18 @@ void CvEconomicAI::UpdatePlots()
 	}
 #if defined(JR_DLL)
 	uint uiJRExplorationPlotIndex = 0;
+	uint uiJRDirExplorationPlotIndex = 0;
 	//uint uiJRGoodyHutPlotIdex = 0;
 #endif
 	uint uiExplorationPlotIndex = 0;
+	
 	uint uiGoodyHutPlotIndex = 0;
 	TeamTypes ePlayerTeam = m_pPlayer->getTeam();
 
 //jr_mods
 #if defined(JR_DLL)
 	m_JRNumberOfRevealed = 0;
+	m_JRNumberOfEndExplorePoints = 0;
 #endif
 
 	CvPlot* pPlot;
@@ -2416,9 +2664,15 @@ void CvEconomicAI::UpdatePlots()
 
 		if(!pPlot->isRevealed(ePlayerTeam))
 		{
+#if defined(JR_DLL)
+			if(!pPlot->isVisited() && pPlot->hasAdjacentCoastal(ePlayerTeam) && pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea())
+			{
+				m_JRNumberOfEndExplorePoints ++;
+			}
+#endif
 			continue;
 		}
-
+		
 		if(pPlot->isRevealedGoody(ePlayerTeam) && !pPlot->isVisibleEnemyUnit(m_pPlayer->GetID()))
 		{
 			if(m_aiGoodyHutPlots.size() <= uiGoodyHutPlotIndex)
@@ -2451,21 +2705,95 @@ void CvEconomicAI::UpdatePlots()
 			eDomain = DOMAIN_SEA;
 		}
 #if defined(JR_DLL)
-		if(pPlot->isRevealed(ePlayerTeam))
+		if(pPlot->isRevealed(ePlayerTeam) && !pPlot->isWater())
 		{
 			m_JRNumberOfRevealed ++;
 		}
-		int jScore = ScoreExplorePlotGreedy(pPlot,ePlayerTeam, 1, eDomain);
+		
+		/*TODO might have to change 1*/
+		int gScore = ScoreExplorePlotGreedy(pPlot,ePlayerTeam, 1, eDomain);
+		int hScore = ScoreExplorePlotHeuristic(pPlot,ePlayerTeam, 1, eDomain);
+		int rScore = rand() % 100;   
+		int dScore = ScoreExplorePlotDistance(pPlot,ePlayerTeam,1,eDomain);
 		// add an entry for this plot
-		if(m_aiJRExplorationPlots.size() <= uiJRExplorationPlotIndex)
+		if(gScore > 0)
 		{
-			m_aiJRExplorationPlots.push_back(-1);
-			m_aiJRExplorationPlotRatings.push_back(-1);
+			if(m_ExplorationPlotsGreedy.size() <= uiJRExplorationPlotIndex)
+			{
+				m_ExplorationPlotsGreedy.push_back(-1);
+				m_ExplorationPlotRatingsGreedy.push_back(-1);
+			}
+			if(m_ExplorationPlotsRandom.size() <= uiJRExplorationPlotIndex)
+			{
+				m_ExplorationPlotsRandom.push_back(-1);
+				m_ExplorationPlotRatingsRandom.push_back(-1);
+			}
+			if(m_ExplorationPlotsHeuristic.size() <= uiJRExplorationPlotIndex)
+			{
+				m_ExplorationPlotsHeuristic.push_back(-1);
+				m_ExplorationPlotRatingsHeuristic.push_back(-1);
+			}
+			if(m_ExplorationPlotsDistance.size() <= uiJRExplorationPlotIndex)
+			{
+				m_ExplorationPlotsDistance.push_back(-1);
+				m_ExplorationPlotRatingsDistance.push_back(-1);
+			}
+			m_ExplorationPlotsGreedy[uiJRExplorationPlotIndex] = i;
+			m_ExplorationPlotRatingsGreedy[uiJRExplorationPlotIndex] = gScore;
+			m_ExplorationPlotsRandom[uiJRExplorationPlotIndex] = i;
+			m_ExplorationPlotRatingsRandom[uiJRExplorationPlotIndex] = rScore;
+			m_ExplorationPlotsHeuristic[uiJRExplorationPlotIndex] = i;
+			m_ExplorationPlotRatingsHeuristic[uiJRExplorationPlotIndex] = hScore;
+			m_ExplorationPlotsDistance[uiJRExplorationPlotIndex] = i;
+			m_ExplorationPlotRatingsDistance[uiJRExplorationPlotIndex] = dScore;
+			uiJRExplorationPlotIndex++;
+			
+			
+			if(!pPlot->isVisited())
+			{
+				if(m_ExplorationPlotsDirection.size() <= uiJRDirExplorationPlotIndex)
+				{
+					m_ExplorationPlotsDirection.push_back(-1);
+					m_ExplorationPlotRatingsDirection.push_back(-1);
+				}
+				m_ExplorationPlotsDirection[uiJRDirExplorationPlotIndex] = i;
+				m_ExplorationPlotRatingsDirection[uiJRDirExplorationPlotIndex] = 1;
+				uiJRDirExplorationPlotIndex++;
+			}
 		}
-
-		m_aiJRExplorationPlots[uiJRExplorationPlotIndex] = i;
-		m_aiJRExplorationPlotRatings[uiJRExplorationPlotIndex] = jScore;
-		uiJRExplorationPlotIndex++;
+		
+		/*if(m_currentUnit)
+		{
+			if(plotXYWithRangeCheck(m_currentUnit->getX(), m_currentUnit->getY(),pPlot->getX() - m_currentUnit->getX(), pPlot->getY() - m_currentUnit->getY(),m_currentUnit->movesLeft()))
+			{
+				if(m_currentUnit->plot() != pPlot && !pPlot->isVisited())
+				{
+				if(pPlot->isOnFrontier(m_currentUnit->GetPrevDirection(), m_currentUnit->getTeam()))
+				{
+					if(m_ExplorationPlotsDirection.size() <= uiJRDirExplorationPlotIndex)
+					{
+						m_ExplorationPlotsDirection.push_back(-1);
+						m_ExplorationPlotRatingsDirection.push_back(-1);
+					}
+					m_ExplorationPlotsDirection[uiJRDirExplorationPlotIndex] = i;
+					m_ExplorationPlotRatingsDirection[uiJRDirExplorationPlotIndex] = 1;
+					uiJRDirExplorationPlotIndex++;
+				}
+			//}
+					
+		}*/
+		/*if(dScore > 0)
+		{
+			if(m_ExplorationPlotsDistance.size() <= uiDistExplorationPlotIndex)
+			{
+				m_ExplorationPlotsDistance.push_back(-1);
+				m_ExplorationPlotRatingsDistance.push_back(-1);
+			}
+			m_ExplorationPlotsDistance[uiDistExplorationPlotIndex] = i;
+			m_ExplorationPlotRatingsDistance[uiDistExplorationPlotIndex] = dScore;
+			uiDistExplorationPlotIndex++;
+		}*/
+		
 #endif
 		int iScore = ScoreExplorePlot(pPlot, ePlayerTeam, 1, eDomain);
 		if(iScore <= 0)

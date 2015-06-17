@@ -2939,7 +2939,27 @@ CvPlot* CvStepPathFinder::GetXPlotsFromEnd(PlayerTypes ePlayer, PlayerTypes eEne
 
 	return currentPlot;
 }
+//JR_MODS
+#if defined(JR_DLL)
+void CvTwoLayerPathFinder::GetPathDirections(list<DirectionTypes>& directionList) 
+{
+	CvAStarNode* pNode;
 
+	pNode = GC.getPathFinder().GetLastNode();
+	
+	if(pNode == NULL)
+		return;
+
+	while(pNode->m_pParent != NULL)
+	{
+		directionList.push_front(directionXY(pNode->m_pParent->m_iX,pNode->m_pParent->m_iY,pNode->m_iX,pNode->m_iY));
+		
+		pNode = pNode->m_pParent;
+	}
+
+	return;
+}
+#endif
 //	--------------------------------------------------------------------------------
 /// Check for existence of step path between two points
 bool CvIgnoreUnitsPathFinder::DoesPathExist(CvUnit& unit, CvPlot* pStartPlot, CvPlot* pEndPlot)
@@ -4051,3 +4071,5 @@ const CvPathNode* CvPathNodeArray::GetTurnDest(int iTurn)
 
 	return NULL;
 }
+
+

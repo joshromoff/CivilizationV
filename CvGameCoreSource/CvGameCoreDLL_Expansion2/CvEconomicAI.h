@@ -166,9 +166,19 @@ public:
 	CvCity* GetBestGreatWorkCity(CvPlot *pStartPlot, GreatWorkType eGreatWork) const;
 //JR_MODS 
 #if defined(JR_DLL)
-	FFastVector<int>& GetJRExplorationPlots();
-	FFastVector<int>& GetJRExplorationPlotRatings();
+	FFastVector<int>& GetExplorationPlotsGreedy();
+	FFastVector<int>& GetExplorationPlotRatingsGreedy();
+	FFastVector<int>& GetExplorationPlotsRandom();
+	FFastVector<int>& GetExplorationPlotRatingsRandom();
+	FFastVector<int>& GetExplorationPlotsHeuristic();
+	FFastVector<int>& GetExplorationPlotRatingsHeuristic();
+	FFastVector<int>& GetExplorationPlotsDistance();
+	FFastVector<int>& GetExplorationPlotRatingsDistance();
+	FFastVector<int>& GetExplorationPlotsDirection();
+	FFastVector<int>& GetExplorationPlotRatingsDirection();
 	int               GetJRNumberOfRevealed();
+	int               GetJRNumberOfEndExplorePoints();
+
 #endif
 	FFastVector<int>& GetExplorationPlots();
 	FFastVector<int>& GetExplorationPlotRatings();
@@ -179,6 +189,8 @@ public:
 //JR_MODS 
 #if defined(JR_DLL)
 	static int ScoreExplorePlotGreedy(CvPlot* pPlot, TeamTypes eTeam, int iRange, DomainTypes eDomainType);
+	static int ScoreExplorePlotHeuristic(CvPlot* pPlot, TeamTypes eTeam, int iRange, DomainTypes eDomainType);
+	int ScoreExplorePlotDistance(CvPlot* pPlot, TeamTypes eTeam, int iRange, DomainTypes eDomainType); 
 #endif
 
 	static int ScoreExplorePlot(CvPlot* pPlot, TeamTypes eTeam, int iRange, DomainTypes eDomainType);
@@ -277,9 +289,20 @@ private:
 	
 	//JR_MODS eploration
 #if defined(JR_DLL)
-	FFastVector<int> m_aiJRExplorationPlots;
-	FFastVector<int> m_aiJRExplorationPlotRatings;
+	FFastVector<int> m_ExplorationPlotsGreedy;
+	FFastVector<int> m_ExplorationPlotRatingsGreedy;
+	FFastVector<int> m_ExplorationPlotsRandom;
+	FFastVector<int> m_ExplorationPlotRatingsRandom;
+	FFastVector<int> m_ExplorationPlotsHeuristic;
+	FFastVector<int> m_ExplorationPlotRatingsHeuristic;
+	FFastVector<int> m_ExplorationPlotsDistance;
+	FFastVector<int> m_ExplorationPlotRatingsDistance;
+	FFastVector<int> m_ExplorationPlotsDirection;
+	FFastVector<int> m_ExplorationPlotRatingsDirection;
+	CvUnit* m_currentUnit;
 	int m_JRNumberOfRevealed;
+	int m_JRNumberOfEndExplorePoints;
+	
 #endif
 	struct GoodyHutUnitAssignment
 	{

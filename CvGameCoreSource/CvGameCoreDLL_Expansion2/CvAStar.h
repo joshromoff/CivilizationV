@@ -479,7 +479,7 @@ public:
 	void DeInit();
 	CvAStarNode* GetPartialMoveNode(int iCol, int iRow);
 	CvPlot* GetPathEndTurnPlot() const;
-
+	void GetPathDirections(list<DirectionTypes>& directionList);
 	bool GenerateUnitPath(const CvUnit* pkUnit, int iXstart, int iYstart, int iXdest, int iYdest, int iInfo = 0, bool bReuse = false);
 
 private:
