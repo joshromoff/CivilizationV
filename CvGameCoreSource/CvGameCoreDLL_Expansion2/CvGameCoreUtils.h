@@ -169,6 +169,9 @@ inline int plotDistance(int iX1, int iY1, int iX2, int iY2)
 //
 //// not anymore - we are using hexes now
 //
+
+
+
 inline CvPlot* plotDirection(int iX, int iY, DirectionTypes eDirection)
 {
 	if(eDirection == NO_DIRECTION)

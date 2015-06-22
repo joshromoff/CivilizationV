@@ -2283,27 +2283,27 @@ void CvHomelandAI::ExecuteExplorerMoves()
 			iMovementRange = 1;
 		}
 #if defined(JR_DLL)
-		//if((pUnit->GetAutomateToggle() == 5 || (pUnit->GetAutomateToggle() == 6 && pEconomicAI->GetJRNumberOfEndExplorePoints() == 0)) && pUnit->GetPrevDestination() != NULL)
-		//{
-		//	//if the plot still has unexplored adjacent tiles.
-		//	//if(!pUnit->GetPrevDestination()->isVisited())
-		//	if(pEconomicAI->ScoreExplorePlotGreedy(pUnit->GetPrevDestination(),eTeam,1,pUnit->getDomainType()) >= 1)
-		//	{
-		//		bool bCanFindPath = GC.getPathFinder().GenerateUnitPath(pUnit.pointer(), iUnitX, iUnitY,pUnit->GetPrevDestination()->getX(), pUnit->GetPrevDestination()->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
-		//		if(bCanFindPath)
-		//		{
-		//			CvPlot* pEndTurnPlot = GC.getPathFinder().GetPathEndTurnPlot();
-		//			if(pEndTurnPlot != pUnit->plot())
-		//			{
-		//				if(IsValidExplorerEndTurnPlot(pUnit.pointer(), pEndTurnPlot))
-		//				{
-		//					pBestPlot = pEndTurnPlot;
-		//					pBestTarget = pUnit->GetPrevDestination();
-		//				}
-		//			}
-		//		}
-		//	}
-		//}
+		if((pUnit->GetAutomateToggle() == 5 || (pUnit->GetAutomateToggle() == 6 && (pUnit->GetAtStepIn() || pUnit->GetAtMiddle()))) && pUnit->GetPrevDestination() != NULL)
+		{
+			//if the plot still has unexplored adjacent tiles.
+			//if(!pUnit->GetPrevDestination()->isVisited())
+			if(pEconomicAI->ScoreExplorePlotGreedy(pUnit->GetPrevDestination(),eTeam,1,pUnit->getDomainType()) >= 1)
+			{
+				bool bCanFindPath = GC.getPathFinder().GenerateUnitPath(pUnit.pointer(), iUnitX, iUnitY,pUnit->GetPrevDestination()->getX(), pUnit->GetPrevDestination()->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
+				if(bCanFindPath)
+				{
+					CvPlot* pEndTurnPlot = GC.getPathFinder().GetPathEndTurnPlot();
+					if(pEndTurnPlot != pUnit->plot())
+					{
+						if(IsValidExplorerEndTurnPlot(pUnit.pointer(), pEndTurnPlot))
+						{
+							pBestPlot = pEndTurnPlot;
+							pBestTarget = pUnit->GetPrevDestination();
+						}
+					}
+				}
+			}
+		}
 		if(!pBestPlot)
 		{
 #endif
@@ -2765,6 +2765,11 @@ void CvHomelandAI::ExecuteExplorerMoves()
 #if defined(JR_DLL)
 								if(pUnit->GetAutomateToggle() == 5 || pUnit->GetAutomateToggle() == 6)
 								{
+									//if we are not patrolling perimeter than score explore plot greedy should be > 0
+									if((!pUnit->GetAtEnd() || pUnit->GetAtMiddle() || pUnit->GetAtStepIn()) && pEconomicAI->ScoreExplorePlotGreedy(pPlot,eTeam,iBaseSightRange,pUnit->getDomainType()) <= 0)
+									{
+										continue;
+									}
 									GC.getPathFinder().GetPathDirections(currPath);
 									if(CvPlot::comparePlots(pUnit.pointer(),bestPath,currPath))
 									{
@@ -2828,6 +2833,11 @@ void CvHomelandAI::ExecuteExplorerMoves()
 #if defined(JR_DLL)
 									if(pUnit->GetAutomateToggle() == 5 || pUnit->GetAutomateToggle() == 6)
 									{
+										//if we are not patrolling perimeter than score explore plot greedy should be > 0
+										if((!pUnit->GetAtEnd() || pUnit->GetAtMiddle() || pUnit->GetAtStepIn()) && pEconomicAI->ScoreExplorePlotGreedy(pPlot,eTeam,iBaseSightRange,pUnit->getDomainType()) <= 0)
+										{
+											continue;
+										}
 										GC.getPathFinder().GetPathDirections(currPath);
 										if(CvPlot::comparePlots(pUnit.pointer(),bestPath,currPath))
 										{
@@ -2867,25 +2877,7 @@ void CvHomelandAI::ExecuteExplorerMoves()
 #if defined(JR_DLL)
 			fstream log;
 			string gameType = to_string(CvPreGame::gameMapType()) + to_string(GC.getMap().getWorldSize());
-			/*DirectionTypes newDirection = directionXY(pUnit->plot()->getX(),pUnit->plot()->getY(),pBestPlot->getX(), pBestPlot->getY());
-			DirectionTypes newDirectionLeftUp = (newDirection == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirection -1);
-			DirectionTypes newDirectionLeft = (newDirectionLeftUp == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionLeftUp -1);
-			DirectionTypes newDirectionLeftDown = (newDirectionLeft == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionLeft -1);
-			DirectionTypes newDirectionRightDown = (newDirectionLeftDown == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionLeftDown -1);
-			DirectionTypes newDirectionRight = (newDirectionRightDown == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionRightDown -1);
 			
-			CvPlot* visitedPlotL = plotDirection(pUnit->plot()->getX(), pUnit->plot()->getY(), newDirectionLeft);
-			CvPlot* visitedPlotLD = plotDirection(pUnit->plot()->getX(), pUnit->plot()->getY(), newDirectionLeftDown);
-			CvPlot* visitedPlotRD = plotDirection(pUnit->plot()->getX(), pUnit->plot()->getY(), newDirectionRightDown);
-			CvPlot* visitedPlots [] = {visitedPlotL,visitedPlotLD,visitedPlotRD};
-
-			CvPlot* obstaclePlotL = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionLeft);
-			CvPlot* obstaclePlotLU = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionLeftUp);
-			CvPlot* obstaclePlot = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirection);
-			CvPlot* obstaclePlotRD = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionRightDown);
-			CvPlot* obstaclePlotR = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionRight);
-			CvPlot* obstacles [] = {obstaclePlotL,obstaclePlotLU,obstaclePlot};
-			bool atTheEnd = false;*/
 			switch(pUnit->GetAutomateToggle())
 			{
 				case 0:
@@ -2946,33 +2938,6 @@ void CvHomelandAI::ExecuteExplorerMoves()
 						log.open(("../Direction/" + gameType + "run" + to_string(fileNumber("../Direction/" + gameType + "run",".csv")-1) + ".csv").c_str(),fstream::app|fstream::out);
 					}
 					
-					//we need to consider if we are at the end of the world.
-					//if(atTheEnd) //was at the end so try to turn
-					/*if(pUnit->GetAtEnd())
-					{
-						pUnit->SetOrientation(newDirectionLeftUp);
-						pUnit->SetPrevDirection(newDirectionLeftUp);
-						if(!pBestPlot->isOnFrontier(newDirection,eTeam,true))
-						{
-							pUnit->SetAtEnd(false);
-						}
-					}
-					else {
-						if(pBestPlot->isOnFrontier(newDirection,eTeam,false))
-						{
-							pUnit->SetOrientation(newDirectionLeftUp);
-							pUnit->SetPrevDirection(newDirectionLeftUp);
-							pUnit->SetAtEnd(true);
-						}
-						else {
-							pUnit->SetOrientation(newDirection);
-							pUnit->SetPrevDirection(newDirection);
-						}
-					}
-					
-					pUnit->SetPrevDestination(pBestTarget);
-					
-					pBestTarget->setVisited();*/
 					break;
 				case 6:
 					if(GC.getGame().getElapsedGameTurns() == 0)
@@ -2981,7 +2946,9 @@ void CvHomelandAI::ExecuteExplorerMoves()
 						//set current plot and adjacent to be visited
 						pUnit->SetAtEnd(false);
 						pUnit->SetAtMiddle(false);
-						//pUnit->plot()->setVisited();
+						
+						 
+						
 					}
 					else{
 						log.open(("../DirectionLocal/" + gameType + "run" + to_string(fileNumber("../DirectionLocal/" + gameType + "run",".csv")-1) + ".csv").c_str(),fstream::app|fstream::out);
@@ -2996,7 +2963,25 @@ void CvHomelandAI::ExecuteExplorerMoves()
 					//middle
 					if(pUnit->GetAtMiddle())
 					{
-						pUnit->SetAtMiddle(findEnd(pUnit.pointer(),pBestPlot,false));
+						//check to see if still on middle frontier
+						if(!findEnd(pUnit.pointer(),pBestPlot,false))
+						{
+							pUnit->SetAtStepIn(true);
+							pUnit->SetAtMiddle(false);
+							//we will go straight to the destination, and want to step inwards after in the same direction as our last in path
+							pUnit->SetPrevDirection(bestPath.back());
+							pUnit->SetOrientation(bestPath.back());
+						}
+					}
+					//at stepIn, we just arrived at the middle, and took another step inwards
+					else if(pUnit->GetAtStepIn())
+					{
+						//if the target plot has an unrevealed plot to its left than we are in the middle, otherwise step in.
+						if(findEnd(pUnit.pointer(),pBestTarget,false))
+						{
+							pUnit->SetAtMiddle(true);
+							pUnit->SetAtStepIn(false);
+						}
 					}
 					//at end
 					else if(pUnit->GetAtEnd())
@@ -3004,31 +2989,31 @@ void CvHomelandAI::ExecuteExplorerMoves()
 						//transition to middle
 						if(pEconomicAI->GetJRNumberOfEndExplorePoints() == 0)
 						{
+							//no longer scouting perimeter
+							pUnit->SetAtEnd(false);
 							//find new interior perimeter
-							pUnit->SetAtMiddle(findEnd(pUnit.pointer(),pBestPlot,false));
+							pUnit->SetAtStepIn(true);
+							//we will go straight to the destination, and want to step inwards after in the same direction as our last in path
+							pUnit->SetPrevDirection(bestPath.back());
+							pUnit->SetOrientation(bestPath.back());
 						}
 						else
 						{
+							//if the best target is not still at the end, then we actually only found a lake and need to continue looking 
+							if(!pBestTarget->isAtTheEnd(eTeam,true))
+							{
+								pUnit->SetAtEnd(false);
+							}
 							pUnit->SetAtEnd(findEnd(pUnit.pointer(),pBestPlot,true));
 						}
 					}
 					//find end of the world (perimeter)
 					else{
-						pUnit->SetAtEnd(findEnd(pUnit.pointer(), pBestPlot, true));
-					}	
+						pUnit->SetAtEnd(findEnd(pUnit.pointer(),pBestPlot,true));
 						
-	
-					
+					}	
+					//mark destination and previous plot	
 					pUnit->SetPrevDestination(pBestTarget);
-					//mark stuff as visited
-					/*if(visitedPlotL)
-					{
-						visitedPlotL->setVisited();
-					}
-					if(visitedPlotLD)
-					{
-						visitedPlotLD->setVisited();
-					}*/
 					pUnit->plot()->setVisited();
 					break;
 				default:
@@ -3124,33 +3109,36 @@ void CvHomelandAI::ExecuteExplorerMoves()
 bool CvHomelandAI::findEnd(CvUnit* pUnit, CvPlot* pBestPlot, bool lookingForPerimeter)
 {
 	DirectionTypes newDirection = directionXY(pUnit->plot()->getX(),pUnit->plot()->getY(),pBestPlot->getX(), pBestPlot->getY());
-	DirectionTypes newDirectionLeftUp = (newDirection == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirection -1);
-	DirectionTypes newDirectionLeft = (newDirectionLeftUp == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionLeftUp -1);
-	DirectionTypes newDirectionLeftDown = (newDirectionLeft == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionLeft -1);
-	DirectionTypes newDirectionRightDown = (newDirectionLeftDown == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionLeftDown -1);
-	DirectionTypes newDirectionRight = (newDirectionRightDown == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (newDirectionRightDown -1);
+	DirectionTypes newDirectionLeftUp = CvPlot::getDirLeft(newDirection);
+	DirectionTypes newDirectionLeft = CvPlot::getDirLeft(newDirectionLeftUp);
+	DirectionTypes newDirectionLeftDown = CvPlot::getDirLeft(newDirectionLeft);
+	DirectionTypes newDirectionRightDown = CvPlot::getDirLeft(newDirectionLeftDown);
+	DirectionTypes newDirectionRight = CvPlot::getDirLeft(newDirectionRightDown);
 	
 	CvPlot* obstaclePlotL = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionLeft);
 	CvPlot* obstaclePlotLU = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionLeftUp);
 	CvPlot* obstaclePlot = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirection);
 	CvPlot* obstaclePlotRD = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionRightDown);
 	CvPlot* obstaclePlotR = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionRight);
+	
+	
 	if(pUnit->GetAtEnd())
 	{
 		pUnit->SetOrientation(newDirectionLeftUp);
 		pUnit->SetPrevDirection(newDirectionLeftUp);
 		return true;
 	}
-	else if(obstaclePlotRD->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter))
-	{
-		pUnit->SetOrientation(newDirectionRightDown);
-		pUnit->SetPrevDirection(newDirectionRightDown);
-		return true;
-	}
+	//otherwise in step in or finding perimeter
 	else if(obstaclePlotR->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter))
 	{
 		pUnit->SetOrientation(newDirectionRight);
 		pUnit->SetPrevDirection(newDirectionRight);
+		return true;
+	}
+	else if(obstaclePlotRD->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter))
+	{
+		pUnit->SetOrientation(newDirectionRightDown);
+		pUnit->SetPrevDirection(newDirectionRightDown);
 		return true;
 	}
 	else if(obstaclePlot->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter))
@@ -3179,8 +3167,8 @@ bool CvHomelandAI::findEnd(CvUnit* pUnit, CvPlot* pBestPlot, bool lookingForPeri
 			return false;
 		}
 		else{
-			pUnit->SetOrientation(newDirectionLeftUp);
-			pUnit->SetPrevDirection(newDirectionLeftUp);
+			pUnit->SetOrientation(newDirection);
+			pUnit->SetPrevDirection(newDirection);
 			return false;
 		}
 	}

@@ -2340,6 +2340,7 @@ int CvGlobals::getXYCityPlot(int i, int j)
 	return m_aaiXYCityPlot[i][j];
 }
 
+
 DirectionTypes* CvGlobals::getTurnLeftDirection()
 {
 	return m_aeTurnLeftDirection;

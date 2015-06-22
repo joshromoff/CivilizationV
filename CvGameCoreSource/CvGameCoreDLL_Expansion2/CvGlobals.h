@@ -256,6 +256,7 @@ public:
 
 	int* getCityPlotPriority();
 	int getXYCityPlot(int i, int j);
+
 	DirectionTypes* getTurnLeftDirection();
 	DirectionTypes getTurnLeftDirection(int i);
 	DirectionTypes* getTurnRightDirection();

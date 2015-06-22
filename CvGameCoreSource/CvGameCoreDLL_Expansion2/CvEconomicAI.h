@@ -166,6 +166,8 @@ public:
 	CvCity* GetBestGreatWorkCity(CvPlot *pStartPlot, GreatWorkType eGreatWork) const;
 //JR_MODS 
 #if defined(JR_DLL)
+	CvArea* getBiggestOcean() const;
+	void setBiggestOcean(CvArea* ocean);
 	FFastVector<int>& GetExplorationPlotsGreedy();
 	FFastVector<int>& GetExplorationPlotRatingsGreedy();
 	FFastVector<int>& GetExplorationPlotsRandom();
@@ -302,6 +304,7 @@ private:
 	CvUnit* m_currentUnit;
 	int m_JRNumberOfRevealed;
 	int m_JRNumberOfEndExplorePoints;
+	CvArea* m_BiggestOcean;
 	
 #endif
 	struct GoodyHutUnitAssignment

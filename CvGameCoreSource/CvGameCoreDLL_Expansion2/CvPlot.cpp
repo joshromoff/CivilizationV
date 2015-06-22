@@ -1335,17 +1335,27 @@ bool CvPlot::comparePlots(CvUnit* pUnit,list<DirectionTypes> ankorToPlot1, list<
 	{
 		if(*it1 == *it2)
 		{
-			if (ankorToPlot1.size() < ankorToPlot2.size())
+			if(pUnit->GetAtMiddle())
 			{
-				return false;
+				if (ankorToPlot1.size() < ankorToPlot2.size())
+				{
+					return false;
+				}
+				else if(ankorToPlot2.size() < ankorToPlot1.size())
+				{
+					return true;		
+				}
+				else 
+					continue;
 			}
-			else if(ankorToPlot2.size() < ankorToPlot1.size())
-			{
-				return true;		
-			}
-			else 
+			else{
+				//if we made a left turn, we need to make another one.
+				if(startingDirection == *it1)
+				{
+					startingDirection = getDirLeft((DirectionTypes) startingDirection);
+				}
 				continue;
-			//continue;
+			}
 
 		}
 		if(*it1 >= startingDirection && *it2 < startingDirection)
@@ -7924,17 +7934,21 @@ TeamTypes CvPlot::getRevealedTeam(TeamTypes eTeam) const
 }
 //JR_MODS
 #if defined(JR_DLL)
-bool CvPlot::hasAdjacentCoastal(TeamTypes eTeam) const
+bool CvPlot::hasAdjacentCoastal(TeamTypes eTeam, CvArea* biggestOcean) const
 {
-	for(int iI = 0; iI < NUM_DIRECTION_TYPES; ++iI)
+	if(isCoastalLand())
 	{
-		CvPlot* pAdjacentPlot = plotDirection(getX(), getY(), ((DirectionTypes)iI));
-
-		if(pAdjacentPlot != NULL)
+		for(int iI = 0; iI < NUM_DIRECTION_TYPES; ++iI)
 		{
-			if(pAdjacentPlot->isCoastalLand() && pAdjacentPlot->isRevealed(eTeam))
+			CvPlot* pAdjacentPlot = plotDirection(getX(), getY(), ((DirectionTypes)iI));
+
+			if(pAdjacentPlot != NULL)
 			{
-				return true;
+				//if(pAdjacentPlot->isCoastalLand() && pAdjacentPlot->isRevealed(eTeam))
+				if(pAdjacentPlot->area() == biggestOcean)
+				{
+					return true;
+				}
 			}
 		}
 	}
@@ -7952,13 +7966,14 @@ bool CvPlot::isAtTheEnd(TeamTypes eTeam, bool perimeter) const
 {
 	if(perimeter)
 	{
-		if(isCoastalLand())
+		if(isCoastalLand() && !isVisited())
 		{
 			return true;
 		}
 	}
 	else{
-		if(this->getNumAdjacentNonrevealed(eTeam) > 0)
+		//if(getNumAdjacentNonrevealed(eTeam) > 0 && !isImpassable() && !isWater() && !isMountain())
+		if(!isRevealed(eTeam) && getNumAdjacentRevealed() > 0)
 		{
 			return true;
 		}

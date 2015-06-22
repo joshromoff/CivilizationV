@@ -18566,6 +18566,16 @@ bool CvUnit::GetAtMiddle()
 	VALIDATE_OBJECT
 	return m_atMiddle;
 }
+void CvUnit::SetAtStepIn(bool atStepIn)
+{
+	VALIDATE_OBJECT
+	m_atStepIn = atStepIn;
+}
+bool CvUnit::GetAtStepIn()
+{
+	VALIDATE_OBJECT
+	return m_atStepIn;
+}
 void CvUnit::SetClock()
 {
 	VALIDATE_OBJECT

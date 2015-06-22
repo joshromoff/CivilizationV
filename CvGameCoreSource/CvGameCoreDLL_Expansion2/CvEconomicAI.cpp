@@ -959,6 +959,14 @@ void AppendToLog(CvString& strHeader, CvString& strLog, CvString strHeaderValue,
 
 //JR_MODS
 #if defined(JR_DLL)
+CvArea* CvEconomicAI::getBiggestOcean() const
+{
+	return m_BiggestOcean;
+}
+void CvEconomicAI::setBiggestOcean(CvArea* ocean)
+{
+	m_BiggestOcean = ocean;
+}
 FFastVector<int>& CvEconomicAI::GetExplorationPlotsDirection()
 {
 	if(m_bExplorationPlotsDirty)
@@ -1228,14 +1236,14 @@ int CvEconomicAI::ScoreExplorePlotGreedy(CvPlot* pPlot, TeamTypes eTeam, int iRa
 	bool nextToEnd = false;
 	FAssertMsg(pPlot->isRevealed(eTeam), "Plot isn't revealed. This isn't good.");
 	CvPlot* pEvalPlot = NULL;
-	/*for(int iX = -iRange; iX <= iRange; iX++)
+	for(int iX = -iRange; iX <= iRange; iX++)
 	{
 		for(int iY = -iRange; iY <= iRange; iY++)
-		{*/
-		for(int i = 0; i < NUM_DIRECTION_TYPES; ++i)
 		{
-			//pEvalPlot = plotXYWithRangeCheck(iPlotX, iPlotY, iX, iY, iRange);
-			CvPlot* pEvalPlot = plotDirection(pPlot->getX(), pPlot->getY(), ((DirectionTypes)i));
+		//for(int i = 0; i < NUM_DIRECTION_TYPES; ++i)
+		//{
+			CvPlot* pEvalPlot = plotXYWithRangeCheck(iPlotX, iPlotY, iX, iY, iRange);
+			//CvPlot* pEvalPlot = plotDirection(pPlot->getX(), pPlot->getY(), ((DirectionTypes)i));
 			if(!pEvalPlot)
 			{
 				continue;
@@ -1252,10 +1260,13 @@ int CvEconomicAI::ScoreExplorePlotGreedy(CvPlot* pPlot, TeamTypes eTeam, int iRa
 			{
 				continue;
 			}
+			//if the evaluated plot has an adjacent plot this is revealed and then 
+			
 			value++;
 			
+			
 		//}
-		//}
+		}
 	}
 	return value;
 
@@ -2574,6 +2585,11 @@ void CvEconomicAI::UpdatePlots()
 	// reset all plots
 //JR_MODS
 #if defined(JR_DLL)
+	//set the biggest ocean on turn 1
+	if(GC.getGame().getElapsedGameTurns() == 0)
+	{
+		setBiggestOcean(GC.getMap().findBiggestArea(true));
+	}
 	for(uint ui = 0; ui < m_ExplorationPlotsDirection.size(); ui++)
 	{
 		m_ExplorationPlotsDirection[ui] = -1;
@@ -2665,9 +2681,12 @@ void CvEconomicAI::UpdatePlots()
 		if(!pPlot->isRevealed(ePlayerTeam))
 		{
 #if defined(JR_DLL)
-			if(!pPlot->isVisited() && pPlot->hasAdjacentCoastal(ePlayerTeam) && pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea())
+			if(getBiggestOcean())
 			{
-				m_JRNumberOfEndExplorePoints ++;
+				if(!pPlot->isVisited() && pPlot->hasAdjacentCoastal(ePlayerTeam,getBiggestOcean()) && pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea())
+				{
+					m_JRNumberOfEndExplorePoints ++;
+				}
 			}
 #endif
 			continue;
@@ -2749,50 +2768,20 @@ void CvEconomicAI::UpdatePlots()
 			uiJRExplorationPlotIndex++;
 			
 			
-			if(!pPlot->isVisited())
+			
+		}
+		if(!pPlot->isVisited())
+		{
+			if(m_ExplorationPlotsDirection.size() <= uiJRDirExplorationPlotIndex)
 			{
-				if(m_ExplorationPlotsDirection.size() <= uiJRDirExplorationPlotIndex)
-				{
-					m_ExplorationPlotsDirection.push_back(-1);
-					m_ExplorationPlotRatingsDirection.push_back(-1);
-				}
-				m_ExplorationPlotsDirection[uiJRDirExplorationPlotIndex] = i;
-				m_ExplorationPlotRatingsDirection[uiJRDirExplorationPlotIndex] = 1;
-				uiJRDirExplorationPlotIndex++;
+				m_ExplorationPlotsDirection.push_back(-1);
+				m_ExplorationPlotRatingsDirection.push_back(-1);
 			}
+			m_ExplorationPlotsDirection[uiJRDirExplorationPlotIndex] = i;
+			m_ExplorationPlotRatingsDirection[uiJRDirExplorationPlotIndex] = 1;
+			uiJRDirExplorationPlotIndex++;
 		}
 		
-		/*if(m_currentUnit)
-		{
-			if(plotXYWithRangeCheck(m_currentUnit->getX(), m_currentUnit->getY(),pPlot->getX() - m_currentUnit->getX(), pPlot->getY() - m_currentUnit->getY(),m_currentUnit->movesLeft()))
-			{
-				if(m_currentUnit->plot() != pPlot && !pPlot->isVisited())
-				{
-				if(pPlot->isOnFrontier(m_currentUnit->GetPrevDirection(), m_currentUnit->getTeam()))
-				{
-					if(m_ExplorationPlotsDirection.size() <= uiJRDirExplorationPlotIndex)
-					{
-						m_ExplorationPlotsDirection.push_back(-1);
-						m_ExplorationPlotRatingsDirection.push_back(-1);
-					}
-					m_ExplorationPlotsDirection[uiJRDirExplorationPlotIndex] = i;
-					m_ExplorationPlotRatingsDirection[uiJRDirExplorationPlotIndex] = 1;
-					uiJRDirExplorationPlotIndex++;
-				}
-			//}
-					
-		}*/
-		/*if(dScore > 0)
-		{
-			if(m_ExplorationPlotsDistance.size() <= uiDistExplorationPlotIndex)
-			{
-				m_ExplorationPlotsDistance.push_back(-1);
-				m_ExplorationPlotRatingsDistance.push_back(-1);
-			}
-			m_ExplorationPlotsDistance[uiDistExplorationPlotIndex] = i;
-			m_ExplorationPlotRatingsDistance[uiDistExplorationPlotIndex] = dScore;
-			uiDistExplorationPlotIndex++;
-		}*/
 		
 #endif
 		int iScore = ScoreExplorePlot(pPlot, ePlayerTeam, 1, eDomain);

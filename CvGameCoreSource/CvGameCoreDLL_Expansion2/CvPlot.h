@@ -594,12 +594,19 @@ public:
 	bool setRevealed(TeamTypes eTeam, bool bNewValue, bool bTerrainOnly = false, TeamTypes eFromTeam = NO_TEAM);
 //JR_MODS
 #if defined(JR_DLL)
-	bool hasAdjacentCoastal(TeamTypes eTeam) const;
+	bool hasAdjacentCoastal(TeamTypes eTeam, CvArea* biggestOcean) const;
 	bool isVisited() const;
 	void setVisited();
 	bool isAtTheEnd(TeamTypes eTeam, bool perimeter) const;
 	bool isOnFrontier(DirectionTypes forward,TeamTypes eTeam,bool atEnd) const;
 	bool isWorthIt(TeamTypes eTeam);
+
+	static inline DirectionTypes getDirLeft(DirectionTypes dir) 
+	{
+		return (dir == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (dir -1);
+	}
+
+	
 #endif
 	bool isAdjacentRevealed(TeamTypes eTeam) const;
 	bool isAdjacentNonrevealed(TeamTypes eTeam) const;
