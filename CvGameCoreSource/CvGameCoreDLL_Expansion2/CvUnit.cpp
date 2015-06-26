@@ -18546,36 +18546,7 @@ bool CvUnit::IsAutomated() const
 
 //  --------------------------------------------------------------------------------
 #if defined(JR_MODS_H)
-void CvUnit::SetAtEnd(bool atEnd)
-{
-	VALIDATE_OBJECT
-	m_atEnd = atEnd;
-}
-bool CvUnit::GetAtEnd()
-{
-	VALIDATE_OBJECT
-	return m_atEnd;
-}
-void CvUnit::SetAtMiddle(bool atMiddle)
-{
-	VALIDATE_OBJECT
-	m_atMiddle = atMiddle;
-}
-bool CvUnit::GetAtMiddle()
-{
-	VALIDATE_OBJECT
-	return m_atMiddle;
-}
-void CvUnit::SetAtStepIn(bool atStepIn)
-{
-	VALIDATE_OBJECT
-	m_atStepIn = atStepIn;
-}
-bool CvUnit::GetAtStepIn()
-{
-	VALIDATE_OBJECT
-	return m_atStepIn;
-}
+
 void CvUnit::SetClock()
 {
 	VALIDATE_OBJECT

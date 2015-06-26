@@ -2283,11 +2283,56 @@ void CvHomelandAI::ExecuteExplorerMoves()
 			iMovementRange = 1;
 		}
 #if defined(JR_DLL)
-		if((pUnit->GetAutomateToggle() == 5 || (pUnit->GetAutomateToggle() == 6 && (pUnit->GetAtStepIn() || pUnit->GetAtMiddle()))) && pUnit->GetPrevDestination() != NULL)
+		//do pass to see if we need to recalculate targets
+		bool targetFound = false;
+		if(pUnit->GetAutomateToggle() == 5 || pUnit->GetAutomateToggle() == 6)
+		{
+			
+			//FFastVector<int>& aiExplorationPlots = pEconomicAI->GetExplorationTargets();
+			//for(uint ui = 0; ui < pEconomicAI->GetExplorationTargets().size(); ui++)
+			set<CvPlot*>::iterator it;
+			for(it = pEconomicAI->GetExplorationTargets().begin(); it != pEconomicAI->GetExplorationTargets().end(); it++)
+			{
+				/*int iPlot = aiExplorationPlots[ui];
+				if(iPlot < 0)
+				{
+					continue;
+				}
+				
+				CvPlot* pEvalPlot = GC.getMap().plotByIndex(iPlot);*/
+				CvPlot* pEvalPlot = *it;
+				if(!pEvalPlot)
+				{
+					continue;
+				}
+				int iDistance = plotDistance(iUnitX, iUnitY, pEvalPlot->getX(), pEvalPlot->getY());
+				//then we're good
+				if(iDistance <= 4)
+				{
+					targetFound = true;
+					break;
+				}
+			}
+			//reset targets / update plots
+			if(!targetFound)
+			//if(pEconomicAI->GetExplorationTargets().size() == 0)
+			{
+				if(pEconomicAI->GetAtMiddle() || pEconomicAI->GetAtStepIn())
+				{
+					pEconomicAI->SetExplorationTargets(false,eTeam);
+				}
+				//else{
+				//	pEconomicAI->SetExplorationTargets(true,eTeam);
+				//}
+				pEconomicAI->UpdatePlots();
+			}
+		}
+		if((pUnit->GetAutomateToggle() == 5 || (pUnit->GetAutomateToggle() == 6 && (pEconomicAI->GetAtStepIn() || pEconomicAI->GetAtMiddle()) && targetFound)) && pUnit->GetPrevDestination() != NULL)
 		{
 			//if the plot still has unexplored adjacent tiles.
 			//if(!pUnit->GetPrevDestination()->isVisited())
-			if(pEconomicAI->ScoreExplorePlotGreedy(pUnit->GetPrevDestination(),eTeam,1,pUnit->getDomainType()) >= 1)
+			//if(pEconomicAI->ScoreExplorePlotGreedy(pUnit->GetPrevDestination(),eTeam,1,pUnit->getDomainType()) >= 1)
+			if(pUnit->GetPrevDestination()->hasAdjacentTarget(eTeam,pEconomicAI))
 			{
 				bool bCanFindPath = GC.getPathFinder().GenerateUnitPath(pUnit.pointer(), iUnitX, iUnitY,pUnit->GetPrevDestination()->getX(), pUnit->GetPrevDestination()->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
 				if(bCanFindPath)
@@ -2613,7 +2658,7 @@ void CvHomelandAI::ExecuteExplorerMoves()
 								iPlotScore = iRating;
 								break;
 							case 6: 
-								iPlotScore = iRating;
+								iPlotScore = iDistance;
 								break;
 							default:
 								break;
@@ -2648,7 +2693,7 @@ void CvHomelandAI::ExecuteExplorerMoves()
 								iPlotScore = iRating;
 								break;
 							case 6: 
-								iPlotScore = iRating;
+								iPlotScore = iDistance;
 								break;
 							default:
 								break;
@@ -2731,7 +2776,7 @@ void CvHomelandAI::ExecuteExplorerMoves()
 								iPlotScore = iRating;
 								break;
 							case 6: 
-								iPlotScore = iRating;
+								iPlotScore = iDistance;
 								break;
 							default:
 								break;
@@ -2766,12 +2811,12 @@ void CvHomelandAI::ExecuteExplorerMoves()
 								if(pUnit->GetAutomateToggle() == 5 || pUnit->GetAutomateToggle() == 6)
 								{
 									//if we are not patrolling perimeter than score explore plot greedy should be > 0
-									if((!pUnit->GetAtEnd() || pUnit->GetAtMiddle() || pUnit->GetAtStepIn()) && pEconomicAI->ScoreExplorePlotGreedy(pPlot,eTeam,iBaseSightRange,pUnit->getDomainType()) <= 0)
+									if((pEconomicAI->GetAtMiddle() || pEconomicAI->GetAtStepIn()) && pEconomicAI->ScoreExplorePlotGreedy(pPlot,eTeam,iBaseSightRange,pUnit->getDomainType()) <= 0)
 									{
 										continue;
 									}
 									GC.getPathFinder().GetPathDirections(currPath);
-									if(CvPlot::comparePlots(pUnit.pointer(),bestPath,currPath))
+									if(CvPlot::comparePlots(pUnit.pointer(),bestPath,currPath,pEconomicAI))
 									{
 										pBestPlot = pEndTurnPlot;
 										bestPath = currPath;
@@ -2814,6 +2859,7 @@ void CvHomelandAI::ExecuteExplorerMoves()
 								CvPlot* pPlot = aBestPlotList.GetElement(i);
 #if defined(JR_DLL)
 								list<DirectionTypes> currPath;
+								
 																
 #endif
 								bool bCanFindPath = GC.getPathFinder().GenerateUnitPath(pUnit.pointer(), iUnitX, iUnitY, pPlot->getX(), pPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
@@ -2834,12 +2880,13 @@ void CvHomelandAI::ExecuteExplorerMoves()
 									if(pUnit->GetAutomateToggle() == 5 || pUnit->GetAutomateToggle() == 6)
 									{
 										//if we are not patrolling perimeter than score explore plot greedy should be > 0
-										if((!pUnit->GetAtEnd() || pUnit->GetAtMiddle() || pUnit->GetAtStepIn()) && pEconomicAI->ScoreExplorePlotGreedy(pPlot,eTeam,iBaseSightRange,pUnit->getDomainType()) <= 0)
+										if((pEconomicAI->GetAtMiddle() || pEconomicAI->GetAtStepIn()) && pEconomicAI->ScoreExplorePlotGreedy(pPlot,eTeam,iBaseSightRange,pUnit->getDomainType()) <= 0)
 										{
 											continue;
 										}
 										GC.getPathFinder().GetPathDirections(currPath);
-										if(CvPlot::comparePlots(pUnit.pointer(),bestPath,currPath))
+
+										if(CvPlot::comparePlots(pUnit.pointer(),bestPath,currPath,pEconomicAI))
 										{
 											pBestPlot = pEndTurnPlot;
 											bestPath = currPath;
@@ -2944,8 +2991,10 @@ void CvHomelandAI::ExecuteExplorerMoves()
 					{
 						log.open(("../DirectionLocal/" + gameType + "run" + to_string(fileNumber("../DirectionLocal/" + gameType + "run",".csv")) + ".csv").c_str(),fstream::app|fstream::out);
 						//set current plot and adjacent to be visited
-						pUnit->SetAtEnd(false);
-						pUnit->SetAtMiddle(false);
+						pEconomicAI->SetAtEnd(false);
+						pEconomicAI->SetAtMiddle(false);
+						//set the exploration perimeter targets
+						pEconomicAI->SetExplorationTargets(true,eTeam);
 						
 						 
 						
@@ -2961,60 +3010,100 @@ void CvHomelandAI::ExecuteExplorerMoves()
 					3) at middle*/
 					
 					//middle
-					if(pUnit->GetAtMiddle())
+					if(pEconomicAI->GetAtMiddle())
 					{
 						//check to see if still on middle frontier
-						if(!findEnd(pUnit.pointer(),pBestPlot,false))
+						/*if(!findEnd(pUnit.pointer(),pBestTarget,false, pEconomicAI))
 						{
-							pUnit->SetAtStepIn(true);
-							pUnit->SetAtMiddle(false);
+							pEconomicAI->SetAtStepIn(true);
+							pEconomicAI->SetAtMiddle(false);
 							//we will go straight to the destination, and want to step inwards after in the same direction as our last in path
-							pUnit->SetPrevDirection(bestPath.back());
-							pUnit->SetOrientation(bestPath.back());
+							pUnit->SetPrevDirection(CvPlot::getDirLeft(bestPath.back()));
+							pUnit->SetOrientation(CvPlot::getDirLeft(bestPath.back()));
+							//reset targets
+							pEconomicAI->SetExplorationTargets(false,eTeam);
 						}
+						*/
+						pUnit->SetPrevDirection(CvPlot::getDirLeft(bestPath.back()));
+						pUnit->SetOrientation(CvPlot::getDirLeft(bestPath.back()));
+						if(pEconomicAI->GetExplorationTargets().size() == 0)
+						{
+							pEconomicAI->SetExplorationTargets(false,eTeam);
+							pEconomicAI->UpdatePlots();
+						}
+
 					}
 					//at stepIn, we just arrived at the middle, and took another step inwards
-					else if(pUnit->GetAtStepIn())
+					else if(pEconomicAI->GetAtStepIn())
 					{
-						//if the target plot has an unrevealed plot to its left than we are in the middle, otherwise step in.
-						if(findEnd(pUnit.pointer(),pBestTarget,false))
+						/*//if the target plot has an unrevealed plot to its left than we are in the middle, otherwise step in.
+						if(findEnd(pUnit.pointer(),pBestTarget,false, pEconomicAI))
 						{
-							pUnit->SetAtMiddle(true);
-							pUnit->SetAtStepIn(false);
+							pEconomicAI->SetAtMiddle(true);
+							pEconomicAI->SetAtStepIn(false);
+						}
+						//otherwise step in again, reset targets. 
+						else{
+							//we will go straight to the destination, and want to step inwards after in the same direction as our last in path
+							pUnit->SetPrevDirection(CvPlot::getDirLeft(bestPath.back()));
+							pUnit->SetOrientation(CvPlot::getDirLeft(bestPath.back()));
+							//reset targets
+							pEconomicAI->SetExplorationTargets(false,eTeam);
+						}*/
+						pEconomicAI->SetAtMiddle(true);
+						pEconomicAI->SetAtStepIn(false);
+						pUnit->SetPrevDirection(CvPlot::getDirLeft(bestPath.back()));
+						pUnit->SetOrientation(CvPlot::getDirLeft(bestPath.back()));
+						if(pEconomicAI->GetExplorationTargets().size() == 0)
+						{
+							pEconomicAI->SetExplorationTargets(false,eTeam);
+							pEconomicAI->UpdatePlots();
 						}
 					}
 					//at end
-					else if(pUnit->GetAtEnd())
+					else if(pEconomicAI->GetAtEnd())
 					{
 						//transition to middle
-						if(pEconomicAI->GetJRNumberOfEndExplorePoints() == 0)
+						//if(pEconomicAI->GetJRNumberOfEndExplorePoints() == 0)
+						if(pEconomicAI->GetExplorationTargets().size() == 0)
 						{
 							//no longer scouting perimeter
-							pUnit->SetAtEnd(false);
+							pEconomicAI->SetAtEnd(false);
 							//find new interior perimeter
-							pUnit->SetAtStepIn(true);
+							pEconomicAI->SetAtStepIn(true);
 							//we will go straight to the destination, and want to step inwards after in the same direction as our last in path
-							pUnit->SetPrevDirection(bestPath.back());
-							pUnit->SetOrientation(bestPath.back());
+							pUnit->SetPrevDirection(CvPlot::getDirLeft(bestPath.back()));
+							pUnit->SetOrientation(CvPlot::getDirLeft(bestPath.back()));
+							//reset targets
+							pEconomicAI->SetExplorationTargets(false,eTeam);
+							pEconomicAI->UpdatePlots();
 						}
 						else
 						{
 							//if the best target is not still at the end, then we actually only found a lake and need to continue looking 
-							if(!pBestTarget->isAtTheEnd(eTeam,true))
+							if(!pBestTarget->isAtTheEnd(eTeam,true, pEconomicAI))
 							{
-								pUnit->SetAtEnd(false);
+								pEconomicAI->SetAtEnd(false);
 							}
-							pUnit->SetAtEnd(findEnd(pUnit.pointer(),pBestPlot,true));
+							pEconomicAI->SetAtEnd(findEnd(pUnit.pointer(),pBestPlot,true, pEconomicAI));
 						}
 					}
 					//find end of the world (perimeter)
 					else{
-						pUnit->SetAtEnd(findEnd(pUnit.pointer(),pBestPlot,true));
+						if(findEnd(pUnit.pointer(),pBestPlot,true, pEconomicAI))
+						{
+							pEconomicAI->SetAtEnd(true);
+							pEconomicAI->SetExplorationTargets(true,eTeam);
+							pEconomicAI->UpdatePlots();
+
+						}
 						
-					}	
+					}
+					
 					//mark destination and previous plot	
 					pUnit->SetPrevDestination(pBestTarget);
 					pUnit->plot()->setVisited();
+					
 					break;
 				default:
 					break;
@@ -3106,7 +3195,7 @@ void CvHomelandAI::ExecuteExplorerMoves()
 }
 //JR_MODS
 #if defined(JR_DLL)
-bool CvHomelandAI::findEnd(CvUnit* pUnit, CvPlot* pBestPlot, bool lookingForPerimeter)
+bool CvHomelandAI::findEnd(CvUnit* pUnit, CvPlot* pBestPlot, bool lookingForPerimeter, CvEconomicAI* pEconomicAI)
 {
 	DirectionTypes newDirection = directionXY(pUnit->plot()->getX(),pUnit->plot()->getY(),pBestPlot->getX(), pBestPlot->getY());
 	DirectionTypes newDirectionLeftUp = CvPlot::getDirLeft(newDirection);
@@ -3122,56 +3211,55 @@ bool CvHomelandAI::findEnd(CvUnit* pUnit, CvPlot* pBestPlot, bool lookingForPeri
 	CvPlot* obstaclePlotR = plotDirection(pBestPlot->getX(), pBestPlot->getY(), newDirectionRight);
 	
 	
-	if(pUnit->GetAtEnd())
+	if(pEconomicAI->GetAtEnd())
 	{
 		pUnit->SetOrientation(newDirectionLeftUp);
 		pUnit->SetPrevDirection(newDirectionLeftUp);
 		return true;
 	}
 	//otherwise in step in or finding perimeter
-	else if(obstaclePlotR->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter))
+	if(obstaclePlotR->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter, pEconomicAI) && lookingForPerimeter)
 	{
 		pUnit->SetOrientation(newDirectionRight);
 		pUnit->SetPrevDirection(newDirectionRight);
 		return true;
 	}
-	else if(obstaclePlotRD->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter))
+	if(obstaclePlotRD->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter, pEconomicAI)&& lookingForPerimeter)
 	{
 		pUnit->SetOrientation(newDirectionRightDown);
 		pUnit->SetPrevDirection(newDirectionRightDown);
 		return true;
 	}
-	else if(obstaclePlot->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter))
+	if(obstaclePlot->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter, pEconomicAI)&& lookingForPerimeter)
 	{
 		pUnit->SetOrientation(newDirection);
 		pUnit->SetPrevDirection(newDirection);
 		return true;
 	}
-	else if(obstaclePlotL->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter))
+	if(obstaclePlotL->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter, pEconomicAI))
 	{
 		pUnit->SetOrientation(newDirectionLeft);
 		pUnit->SetPrevDirection(newDirectionLeft);
 		return true;
 	}
-	else if(obstaclePlotLU->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter))
+	if(obstaclePlotLU->isAtTheEnd(pUnit->getTeam(),lookingForPerimeter, pEconomicAI))
 	{
 		pUnit->SetOrientation(newDirectionLeftUp);
 		pUnit->SetPrevDirection(newDirectionLeftUp);
 		return true;
 	}
-	else{
-		if(lookingForPerimeter)
-		{
-			pUnit->SetOrientation(DIRECTION_NORTHEAST);
-			pUnit->SetPrevDirection(DIRECTION_NORTHEAST);
-			return false;
-		}
-		else{
-			pUnit->SetOrientation(newDirection);
-			pUnit->SetPrevDirection(newDirection);
-			return false;
-		}
+	if(lookingForPerimeter)
+	{
+		pUnit->SetOrientation(DIRECTION_NORTHEAST);
+		pUnit->SetPrevDirection(DIRECTION_NORTHEAST);
+		return false;
 	}
+	else{
+		pUnit->SetOrientation(newDirection);
+		pUnit->SetPrevDirection(newDirection);
+		return false;
+	}
+	
 	
 }
 //increment file name

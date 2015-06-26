@@ -138,8 +138,8 @@ public:
 	int getNearestLandArea() const;
 	CvPlot* getNearestLandPlot() const;
 #if defined(JR_DLL)
-	static CvPlot* getBestPlot(CvUnit* pUnit,FFastVector<int> frontier);
-	static bool comparePlots(CvUnit* pUnit,list<DirectionTypes> ankorToPlot1, list<DirectionTypes> ankorToPlot2);
+	
+	static bool comparePlots(CvUnit* pUnit,list<DirectionTypes> ankorToPlot1, list<DirectionTypes> ankorToPlot2, CvEconomicAI* pEconomicAI);
 #endif
 	int seeFromLevel(TeamTypes eTeam) const;
 	int seeThroughLevel(bool bIncludeShubbery=true) const;
@@ -594,10 +594,12 @@ public:
 	bool setRevealed(TeamTypes eTeam, bool bNewValue, bool bTerrainOnly = false, TeamTypes eFromTeam = NO_TEAM);
 //JR_MODS
 #if defined(JR_DLL)
+	bool hasAdjacentTarget(TeamTypes eTeam, CvEconomicAI* pEconomicAI) const;
+	bool hasAdjacentRevealed(TeamTypes eTeam) const;
 	bool hasAdjacentCoastal(TeamTypes eTeam, CvArea* biggestOcean) const;
 	bool isVisited() const;
 	void setVisited();
-	bool isAtTheEnd(TeamTypes eTeam, bool perimeter) const;
+	bool isAtTheEnd(TeamTypes eTeam, bool perimeter, CvEconomicAI* pEconomicAI);
 	bool isOnFrontier(DirectionTypes forward,TeamTypes eTeam,bool atEnd) const;
 	bool isWorthIt(TeamTypes eTeam);
 

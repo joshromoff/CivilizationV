@@ -1279,44 +1279,9 @@ CvPlot* CvPlot::getNearestLandPlot() const
 }
 //JR_MODS
 #if defined(JR_DLL)
-CvPlot* CvPlot::getBestPlot(CvUnit* pUnit, FFastVector<int> frontier)
-{
-	//unit plot
-	CvPlot* ankor = pUnit->plot();
-	//set the best plot to be the first plot of the frontier
-	CvPlot* bestPlot = GC.getMap().plotByIndex(frontier.front());
-	//will contain the best plots path
-	list<DirectionTypes> bestPath;
-	
-	for(uint i = 0; i < frontier.size(); i++)
-	{
-		CvPlot* currPlot = GC.getMap().plotByIndex(frontier[i]);
-		list<DirectionTypes> currPath;
-		bool bCanFindPath = GC.getPathFinder().GenerateUnitPath(pUnit,ankor->getX(), ankor->getY(), currPlot->getX(), currPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
-		if(bCanFindPath)
-		{
-			//if we found a path 
-			CvPlot* pEndTurnPlot = GC.getPathFinder().GetPathEndTurnPlot();
-			//if its the same plot... dont make the list
-			if(!pUnit->atPlot(*pEndTurnPlot))
-			{
-				//if its a valid end turn plot
-				//#############add eis valid end turn plot
-				GC.getPathFinder().GetPathDirections(currPath);
-				if(comparePlots(pUnit,bestPath,currPath))
-				{
-					bestPlot = pEndTurnPlot;
-					bestPath = currPath;
-				}
-			}
-		}
-	}
-	if(bestPath.empty())
-		return NULL;
-	return bestPlot;
-}
+
 /*northeast>east>southeast>southwest>west>northwest>north> returns true if ankortoplot2 is better*/
-bool CvPlot::comparePlots(CvUnit* pUnit,list<DirectionTypes> ankorToPlot1, list<DirectionTypes> ankorToPlot2)
+bool CvPlot::comparePlots(CvUnit* pUnit,list<DirectionTypes> ankorToPlot1, list<DirectionTypes> ankorToPlot2, CvEconomicAI* pEconomicAI)
 {
 	//multiplier to determine clockwise or ccw
 	//int multiplier = (pUnit->GetClock()) ? 1 : - 1;
@@ -1331,24 +1296,13 @@ bool CvPlot::comparePlots(CvUnit* pUnit,list<DirectionTypes> ankorToPlot1, list<
 	//loop through the size of the shorter list
 	list<DirectionTypes>::iterator it1 = ankorToPlot1.begin();
 	list<DirectionTypes>::iterator it2 = ankorToPlot2.begin();
-	for(;it1 != ankorToPlot1.end() && it2 != ankorToPlot2.end(); it1++, it2++)
+	//use comparison if either theyre both more than one turn away, within two turns of relative distance, or were at perimeter
+	if(abs((int)ankorToPlot1.size() - (int)ankorToPlot2.size()) == 0 || (!pEconomicAI->GetAtMiddle() && !pEconomicAI->GetAtStepIn()))
 	{
-		if(*it1 == *it2)
+		for(;it1 != ankorToPlot1.end() && it2 != ankorToPlot2.end(); it1++, it2++)
 		{
-			if(pUnit->GetAtMiddle())
+			if(*it1 == *it2)
 			{
-				if (ankorToPlot1.size() < ankorToPlot2.size())
-				{
-					return false;
-				}
-				else if(ankorToPlot2.size() < ankorToPlot1.size())
-				{
-					return true;		
-				}
-				else 
-					continue;
-			}
-			else{
 				//if we made a left turn, we need to make another one.
 				if(startingDirection == *it1)
 				{
@@ -1356,17 +1310,16 @@ bool CvPlot::comparePlots(CvUnit* pUnit,list<DirectionTypes> ankorToPlot1, list<
 				}
 				continue;
 			}
-
+			if(*it1 >= startingDirection && *it2 < startingDirection)
+			{
+				return false;
+			}
+			if(*it2 >= startingDirection && *it1 < startingDirection)
+			{
+				return true;
+			}
+			return (*it2<*it1);
 		}
-		if(*it1 >= startingDirection && *it2 < startingDirection)
-		{
-			return false;
-		}
-		if(*it2 >= startingDirection && *it1 < startingDirection)
-		{
-			return true;
-		}
-		return (*it2<*it1);
 	}
 	//havent found a path yet so return the shorter one
 	return (ankorToPlot1.size() <= ankorToPlot2.size()) ? false : true;
@@ -7934,6 +7887,40 @@ TeamTypes CvPlot::getRevealedTeam(TeamTypes eTeam) const
 }
 //JR_MODS
 #if defined(JR_DLL)
+bool CvPlot::hasAdjacentTarget(TeamTypes eTeam, CvEconomicAI* pEconomicAI) const
+{
+	for(int iI = 0; iI < NUM_DIRECTION_TYPES; ++iI)
+	{
+		CvPlot* pAdjacentPlot = plotDirection(getX(), getY(), ((DirectionTypes)iI));
+
+		if(pAdjacentPlot)
+		{
+			if(pEconomicAI->GetExplorationTargets().find(pAdjacentPlot) != pEconomicAI->GetExplorationTargets().end())
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+
+}
+bool CvPlot::hasAdjacentRevealed(TeamTypes eTeam) const
+{
+	for(int iI = 0; iI < NUM_DIRECTION_TYPES; ++iI)
+	{
+		CvPlot* pAdjacentPlot = plotDirection(getX(), getY(), ((DirectionTypes)iI));
+
+		if(pAdjacentPlot)
+		{
+			if(pAdjacentPlot->isRevealed(eTeam))
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+
+}
 bool CvPlot::hasAdjacentCoastal(TeamTypes eTeam, CvArea* biggestOcean) const
 {
 	if(isCoastalLand())
@@ -7962,7 +7949,7 @@ void CvPlot::setVisited()
 {
 	m_visited = true;
 }
-bool CvPlot::isAtTheEnd(TeamTypes eTeam, bool perimeter) const
+bool CvPlot::isAtTheEnd(TeamTypes eTeam, bool perimeter, CvEconomicAI* pEconomicAI) 
 {
 	if(perimeter)
 	{
@@ -7973,7 +7960,7 @@ bool CvPlot::isAtTheEnd(TeamTypes eTeam, bool perimeter) const
 	}
 	else{
 		//if(getNumAdjacentNonrevealed(eTeam) > 0 && !isImpassable() && !isWater() && !isMountain())
-		if(!isRevealed(eTeam) && getNumAdjacentRevealed() > 0)
+		if(pEconomicAI->GetExplorationTargets().find(this) != pEconomicAI->GetExplorationTargets().end())
 		{
 			return true;
 		}

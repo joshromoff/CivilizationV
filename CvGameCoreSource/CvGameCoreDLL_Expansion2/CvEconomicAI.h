@@ -180,6 +180,14 @@ public:
 	FFastVector<int>& GetExplorationPlotRatingsDirection();
 	int               GetJRNumberOfRevealed();
 	int               GetJRNumberOfEndExplorePoints();
+	set<CvPlot*>&      GetExplorationTargets();
+	void              SetExplorationTargets(bool perimeter, TeamTypes eTeam);
+	void SetAtEnd(bool atEnd);
+	bool GetAtEnd();
+	void SetAtMiddle(bool atMiddle);
+	bool GetAtMiddle();
+	void SetAtStepIn(bool atStepIn);
+	bool GetAtStepIn();
 
 #endif
 	FFastVector<int>& GetExplorationPlots();
@@ -305,6 +313,10 @@ private:
 	int m_JRNumberOfRevealed;
 	int m_JRNumberOfEndExplorePoints;
 	CvArea* m_BiggestOcean;
+	set<CvPlot*> m_ExplorationTargets;
+	bool m_atEnd;
+	bool m_atMiddle;
+	bool m_atStepIn;
 	
 #endif
 	struct GoodyHutUnitAssignment

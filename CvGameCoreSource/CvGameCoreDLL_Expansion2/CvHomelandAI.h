@@ -203,7 +203,7 @@ public:
 	int fileNumber(string pathToFile, string extension);
 	template <typename T>
 	string to_string(T value);
-	bool findEnd(CvUnit* pUnit, CvPlot* pBestPlot, bool lookingForPerimeter);
+	bool findEnd(CvUnit* pUnit, CvPlot* pBestPlot, bool lookingForPerimeter, CvEconomicAI* pEconomicAI);
 #endif
 	// Serialization routines
 	void Read(FDataStream& kStream);
