@@ -91,7 +91,9 @@ void CvArea::reset(int iID, bool bWater, bool bConstructorCall)
 
 	m_bWater = bWater;
 	m_bMountains = false;
-
+#if defined(JR_DLL)
+	m_Wrapper = false;
+#endif
 	for(iI = 0; iI < REALLY_MAX_PLAYERS; iI++)
 	{
 		m_aiUnitsPerPlayer[iI] = 0;
@@ -653,7 +655,34 @@ void CvArea::setAreaBoundaries(CvAreaBoundaries newBoundaries)
 {
 	m_Boundaries = newBoundaries;
 }
+//JR_MODS
+#if defined(JR_DLL)
+bool CvArea::isAtWrapper() const
+{
+	return m_Wrapper;
+}
+void CvArea::setAtWrapper()
+{
+	//for each tile in area, if one of them is on the x or y boundary set m_Wrapper to be true
 
+	for(int iI = 0; iI < GC.getMap().numPlots(); iI++)
+	{
+		CvPlot* pLoopPlot = GC.getMap().plotByIndexUnchecked(iI);
+		
+		if(pLoopPlot->getArea() == GetID())
+		{
+			int x = pLoopPlot->getX();
+			int y = pLoopPlot->getY();
+			//at the wrapper - return
+			if(x == 0 || x == GC.getMap().getGridWidth() || y == 0 || y == GC.getMap().getGridHeight())
+			{
+				m_Wrapper = true;
+				return;
+			}
+		}
+	}
+}
+#endif
 //	--------------------------------------------------------------------------------
 /// What are the top and bottom latitudes of this Area (passed by reference)
 void CvArea::GetTopAndBottomLatitudes(int& iTopLatitude, int& iBottomLatitude)

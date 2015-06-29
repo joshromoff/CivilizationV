@@ -975,7 +975,7 @@ void CvEconomicAI::SetExplorationTargets(bool perimeter,TeamTypes eTeam)
 		pPlot = GC.getMap().plotByIndexUnchecked(i);
 		if(perimeter)
 		{
-			if(!pPlot->isVisited() && pPlot->isCoastalLand() &&  pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea() && pPlot->hasAdjacentRevealed(eTeam))
+			if(!pPlot->isVisited() /*&& pPlot->isCoastalLand()*/ &&  pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea() && pPlot->hasAdjacentCoastal())
 			{
 				GetExplorationTargets().insert(pPlot);
 			}
@@ -2643,6 +2643,14 @@ void CvEconomicAI::UpdatePlots()
 	if(GC.getGame().getElapsedGameTurns() == 0)
 	{
 		setBiggestOcean(GC.getMap().findBiggestArea(true));
+		for(int i = 0; i < GC.getMap().getNumAreas(); i++)
+		{
+			CvArea* curArea = GC.getMap().getArea(i);
+			if(curArea)
+			{
+				curArea->setAtWrapper();
+			}
+		}
 	}
 	for(uint ui = 0; ui < m_ExplorationPlotsDirection.size(); ui++)
 	{
@@ -2754,7 +2762,7 @@ void CvEconomicAI::UpdatePlots()
 			}*/
 			if(GetAtEnd())
 			{
-				if(!pPlot->isVisited() && pPlot->isCoastalLand() &&  pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea() && pPlot->hasAdjacentRevealed(ePlayerTeam))
+				if(!pPlot->isVisited() /*&& pPlot->isCoastalLand() */ &&  pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea() && pPlot->hasAdjacentCoastal())
 				{
 					if(GetExplorationTargets().find(pPlot) == GetExplorationTargets().end())
 					{

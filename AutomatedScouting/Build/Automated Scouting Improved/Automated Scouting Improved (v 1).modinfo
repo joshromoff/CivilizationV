@@ -24,7 +24,7 @@
   <Files>
     <File md5="0D0DB28AFA7356850080D1E220E75745" import="1">AssignStartingPlots.lua</File>
     <File md5="FA582D4720A4A144F53413B6118F1CAB" import="0">CIV5Worlds.xml</File>
-    <File md5="5E8E98E9C6473C923B8A54955B91423B" import="1">CvGameCore_Expansion2.dll</File>
+    <File md5="1A54D7E85569078309669D2A6EBA383E" import="1">CvGameCore_Expansion2.dll</File>
     <File md5="24804D9FE8AF3E0C16DC1F9E24926C8A" import="0">NoHappiness.xml</File>
     <File md5="E077583E7B3C234F0BB5A34C871F36D6" import="0">NoSettler.xml</File>
     <File md5="CBB12F5538952579356B63E087578BB9" import="1">Test_UnitPanelHook.lua</File>

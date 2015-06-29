@@ -1297,7 +1297,7 @@ bool CvPlot::comparePlots(CvUnit* pUnit,list<DirectionTypes> ankorToPlot1, list<
 	list<DirectionTypes>::iterator it1 = ankorToPlot1.begin();
 	list<DirectionTypes>::iterator it2 = ankorToPlot2.begin();
 	//use comparison if either theyre both more than one turn away, within two turns of relative distance, or were at perimeter
-	if(abs((int)ankorToPlot1.size() - (int)ankorToPlot2.size()) == 0 || (!pEconomicAI->GetAtMiddle() && !pEconomicAI->GetAtStepIn()))
+	if((ankorToPlot1.size() <= 4 && ankorToPlot2.size() <= 4 && pEconomicAI->GetAtMiddle())/*abs((int)ankorToPlot1.size() - (int)ankorToPlot2.size()) == 0 */|| (!pEconomicAI->GetAtMiddle() && !pEconomicAI->GetAtStepIn()))
 	{
 		for(;it1 != ankorToPlot1.end() && it2 != ankorToPlot2.end(); it1++, it2++)
 		{
@@ -7921,7 +7921,7 @@ bool CvPlot::hasAdjacentRevealed(TeamTypes eTeam) const
 	return false;
 
 }
-bool CvPlot::hasAdjacentCoastal(TeamTypes eTeam, CvArea* biggestOcean) const
+bool CvPlot::hasAdjacentCoastal() const
 {
 	if(isCoastalLand())
 	{
@@ -7932,7 +7932,7 @@ bool CvPlot::hasAdjacentCoastal(TeamTypes eTeam, CvArea* biggestOcean) const
 			if(pAdjacentPlot != NULL)
 			{
 				//if(pAdjacentPlot->isCoastalLand() && pAdjacentPlot->isRevealed(eTeam))
-				if(pAdjacentPlot->area() == biggestOcean)
+				if(pAdjacentPlot->area()->isAtWrapper() && (pAdjacentPlot->isWater() || pAdjacentPlot->isImpassable()))
 				{
 					return true;
 				}

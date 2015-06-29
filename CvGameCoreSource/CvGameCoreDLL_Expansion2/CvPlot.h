@@ -596,7 +596,7 @@ public:
 #if defined(JR_DLL)
 	bool hasAdjacentTarget(TeamTypes eTeam, CvEconomicAI* pEconomicAI) const;
 	bool hasAdjacentRevealed(TeamTypes eTeam) const;
-	bool hasAdjacentCoastal(TeamTypes eTeam, CvArea* biggestOcean) const;
+	bool hasAdjacentCoastal() const;
 	bool isVisited() const;
 	void setVisited();
 	bool isAtTheEnd(TeamTypes eTeam, bool perimeter, CvEconomicAI* pEconomicAI);

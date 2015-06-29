@@ -113,7 +113,11 @@ public:
 
 	int getNumImprovements(ImprovementTypes eImprovement) const;
 	void changeNumImprovements(ImprovementTypes eImprovement, int iChange);
-
+//JR_MODS
+#if defined(JR_DLL)
+	bool isAtWrapper() const;
+	void setAtWrapper();
+#endif
 	CvAreaBoundaries getAreaBoundaries() const;
 	void setAreaBoundaries(CvAreaBoundaries newBoundaries);
 
@@ -157,6 +161,10 @@ protected:
 
 	bool m_bWater;
 	bool m_bMountains;
+	
+#if defined(JR_DLL)
+	bool m_Wrapper;
+#endif
 };
 
 FDataStream& operator<<(FDataStream&, const CvArea&);
