@@ -188,7 +188,10 @@ public:
 	bool GetAtMiddle();
 	void SetAtStepIn(bool atStepIn);
 	bool GetAtStepIn();
-
+	CvPlot* GetAnkor();
+	void SetAnkor(CvPlot* ankor);
+	CvPlot* GetMicroGreedyExplorePlot(CvPlot* pPlot, TeamTypes eTeam,int iRange,  DomainTypes eDomainType);
+	map<CvPlot*,CvPlot*>& GetTargetLookUpTable();
 #endif
 	FFastVector<int>& GetExplorationPlots();
 	FFastVector<int>& GetExplorationPlotRatings();
@@ -317,6 +320,8 @@ private:
 	bool m_atEnd;
 	bool m_atMiddle;
 	bool m_atStepIn;
+	CvPlot* m_ankor;
+	map<CvPlot*,CvPlot*> m_TargetLookUpTable;
 	
 #endif
 	struct GoodyHutUnitAssignment

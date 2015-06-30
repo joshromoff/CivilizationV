@@ -962,6 +962,14 @@ void AppendToLog(CvString& strHeader, CvString& strLog, CvString strHeaderValue,
 
 //JR_MODS
 #if defined(JR_DLL)
+void CvEconomicAI::SetAnkor(CvPlot* ankor)
+{
+	m_ankor = ankor;
+}
+CvPlot* CvEconomicAI::GetAnkor()
+{
+	return m_ankor;
+}
 set<CvPlot*>& CvEconomicAI::GetExplorationTargets()
 {
 	return m_ExplorationTargets;
@@ -1195,6 +1203,46 @@ bool CvEconomicAI::GetAtStepIn()
 {
 	return m_atStepIn;
 }
+map<CvPlot*,CvPlot*>& CvEconomicAI::GetTargetLookUpTable()
+{
+	return m_TargetLookUpTable;
+}
+CvPlot* CvEconomicAI::GetMicroGreedyExplorePlot(CvPlot* pPlot, TeamTypes eTeam, int iRange,  DomainTypes eDomainType)
+{
+	int bestValue  = 0;
+	CvPlot* bestPlot = NULL;
+	int iPlotX = pPlot->getX();
+	int iPlotY = pPlot->getY();
+	for(int iX = -iRange; iX <= iRange; iX++)
+	{
+		for(int iY = -iRange; iY <= iRange; iY++)
+		{
+			CvPlot* pEvalPlot = plotXYWithRangeCheck(iPlotX, iPlotY, iX, iY, iRange);
+			if(!pEvalPlot)
+			{
+				continue;
+			}
+			if(pEvalPlot == pPlot)
+			{
+				continue;
+			}
+			if(!pEvalPlot->isRevealed(eTeam))
+			{
+				continue;
+			}
+			if(pEvalPlot->canSeePlot(pPlot,eTeam,iRange,NO_DIRECTION))
+			{
+				int curValue = ScoreExplorePlotGreedy(pPlot,eTeam,iRange,eDomainType);
+				if(curValue > bestValue)
+				{
+					bestValue = curValue;
+					bestPlot = pEvalPlot;
+				}
+			}
+		}
+	}
+	return bestPlot;
+}
 int CvEconomicAI::ScoreExplorePlotDistance(CvPlot* pPlot, TeamTypes eTeam, int iRange, DomainTypes eDomainType)
 {
 	
@@ -1315,8 +1363,10 @@ int CvEconomicAI::ScoreExplorePlotGreedy(CvPlot* pPlot, TeamTypes eTeam, int iRa
 				continue;
 			}
 			//if the evaluated plot has an adjacent plot this is revealed and then 
-			
-			value++;
+			if(pPlot->canSeePlot(pEvalPlot, eTeam, iRange, NO_DIRECTION))
+			{
+				value++;
+			}
 			
 			
 		//}
@@ -2682,6 +2732,8 @@ void CvEconomicAI::UpdatePlots()
 		m_ExplorationPlotsDistance[ui] = -1;
 		m_ExplorationPlotRatingsDistance[ui] = -1;
 	}
+	//reset targets
+	GetTargetLookUpTable().clear();
 #endif
 	for(uint ui = 0; ui < m_aiExplorationPlots.size(); ui++)
 	{
@@ -2753,32 +2805,25 @@ void CvEconomicAI::UpdatePlots()
 		if(!pPlot->isRevealed(ePlayerTeam))
 		{
 #if defined(JR_DLL)
-			/*if(getBiggestOcean())
-			{
-				if(!pPlot->isVisited() && pPlot->hasAdjacentCoastal(ePlayerTeam,getBiggestOcean()) && pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea())
-				{
-					m_JRNumberOfEndExplorePoints ++;
-				}
-			}*/
-			if(GetAtEnd())
-			{
-				if(!pPlot->isVisited() /*&& pPlot->isCoastalLand() */ &&  pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea() && pPlot->hasAdjacentCoastal())
-				{
-					if(GetExplorationTargets().find(pPlot) == GetExplorationTargets().end())
-					{
-						GetExplorationTargets().insert(pPlot);
-					}
-					m_JRNumberOfEndExplorePoints ++;
+			//if(GetAtEnd())
+			//{
+			//	if(!pPlot->isVisited() /*&& pPlot->isCoastalLand() */ &&  pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea() && pPlot->hasAdjacentCoastal())
+			//	{
+			//		if(GetExplorationTargets().find(pPlot) == GetExplorationTargets().end())
+			//		{
+			//			GetExplorationTargets().insert(pPlot);
+			//		}
+			//		m_JRNumberOfEndExplorePoints ++;
 
-				}
-				//otherwise remove it
-				else{
-					if(GetExplorationTargets().find(pPlot) != GetExplorationTargets().end())
-					{
-						GetExplorationTargets().erase(pPlot);
-					}
-				}
-			}
+			//	}
+			//	//otherwise remove it
+			//	else{
+			//		if(GetExplorationTargets().find(pPlot) != GetExplorationTargets().end())
+			//		{
+			//			GetExplorationTargets().erase(pPlot);
+			//		}
+			//	}
+			//}
 #endif
 			continue;
 		}
@@ -2866,7 +2911,8 @@ void CvEconomicAI::UpdatePlots()
 			
 			
 		}
-		if((!pPlot->isVisited() && !GetAtStepIn() && !GetAtMiddle()) || (pPlot->hasAdjacentTarget(ePlayerTeam,this) && (GetAtStepIn() || GetAtMiddle())))
+		pair<CvPlot*,bool> AdjacentTarget (pPlot->hasAdjacentTarget(ePlayerTeam,this));
+		if(((!pPlot->isVisited() || pPlot == GetAnkor()) && !GetAtStepIn() && !GetAtMiddle()) || (AdjacentTarget.second && (GetAtStepIn() || GetAtMiddle())))
 		{
 			if(m_ExplorationPlotsDirection.size() <= uiJRDirExplorationPlotIndex)
 			{
@@ -2876,6 +2922,11 @@ void CvEconomicAI::UpdatePlots()
 			m_ExplorationPlotsDirection[uiJRDirExplorationPlotIndex] = i;
 			m_ExplorationPlotRatingsDirection[uiJRDirExplorationPlotIndex] = 1;
 			uiJRDirExplorationPlotIndex++;
+			//if at stepin or atmiddle add to the lookup table
+			if((GetAtStepIn() || GetAtMiddle()) && AdjacentTarget.second)
+			{
+				GetTargetLookUpTable()[pPlot] = AdjacentTarget.first;
+			}
 		}
 		
 		

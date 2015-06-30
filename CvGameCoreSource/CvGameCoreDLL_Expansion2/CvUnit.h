@@ -145,6 +145,7 @@ public:
 	int  GetJScore() const;
 	void SetPrevDirection(DirectionTypes eDirection);
 	DirectionTypes GetPrevDirection();
+	vector<CvPlot*>& GetEndStack();
 	
 #endif
 	void SetAutomateType(AutomateTypes eNewValue);
@@ -1461,15 +1462,16 @@ protected:
 	IDInfo m_missionAIUnit;
 	FAutoVariable<ActivityTypes, CvUnit> m_eActivityType;
 	//JR_MODS : adding in m_eAutomateToggle and m_eJScore
-	#if defined(JR_MODS_H)
+#if defined(JR_MODS_H)
 	int m_eAutomateToggle;
 	int m_eJScore;
 	DirectionTypes m_prevDirection;
 	DirectionTypes m_orientation;
 	CvPlot* m_prevDestination;
 	bool m_clock;
+	vector<CvPlot*> m_EndStack;
 	
-	#endif
+#endif
 	FAutoVariable<AutomateTypes, CvUnit> m_eAutomateType;
 	FAutoVariable<UnitAITypes, CvUnit> m_eUnitAIType;
 	DestructionNotification<UnitHandle> m_destructionNotification;

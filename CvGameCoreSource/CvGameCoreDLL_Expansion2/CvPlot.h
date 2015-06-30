@@ -594,7 +594,7 @@ public:
 	bool setRevealed(TeamTypes eTeam, bool bNewValue, bool bTerrainOnly = false, TeamTypes eFromTeam = NO_TEAM);
 //JR_MODS
 #if defined(JR_DLL)
-	bool hasAdjacentTarget(TeamTypes eTeam, CvEconomicAI* pEconomicAI) const;
+	pair<CvPlot*,bool> hasAdjacentTarget(TeamTypes eTeam, CvEconomicAI* pEconomicAI) const;
 	bool hasAdjacentRevealed(TeamTypes eTeam) const;
 	bool hasAdjacentCoastal() const;
 	bool isVisited() const;
@@ -602,11 +602,31 @@ public:
 	bool isAtTheEnd(TeamTypes eTeam, bool perimeter, CvEconomicAI* pEconomicAI);
 	bool isOnFrontier(DirectionTypes forward,TeamTypes eTeam,bool atEnd) const;
 	bool isWorthIt(TeamTypes eTeam);
-
 	static inline DirectionTypes getDirLeft(DirectionTypes dir) 
 	{
 		return (dir == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (dir -1);
 	}
+
+	static inline bool wasClockwise(vector<CvPlot*> endStack)
+	{
+		int sum = 0;
+		for(int i = 0; i < endStack.size() - 1; i++)
+		{
+			CvPlot* curPlot = endStack.at(i);
+			CvPlot* nextPlot = endStack.at(i+1);
+			sum += ((nextPlot->getX() - curPlot->getX()) * (nextPlot->getY() + curPlot->getY()));
+		}
+		//add up last point with first point
+		sum += ((endStack.front()->getX() - endStack.back()->getX()) * (endStack.front()->getY() + endStack.back()->getY()));
+		//cw
+		if(sum >= 0)
+		{
+			return true;
+		}
+		//otherwise ccw
+		return false;
+	}
+
 
 	
 #endif

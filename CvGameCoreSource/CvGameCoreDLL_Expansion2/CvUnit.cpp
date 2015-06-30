@@ -18547,6 +18547,11 @@ bool CvUnit::IsAutomated() const
 //  --------------------------------------------------------------------------------
 #if defined(JR_MODS_H)
 
+vector<CvPlot*>& CvUnit::GetEndStack()
+{
+	VALIDATE_OBJECT
+	return m_EndStack;
+}
 void CvUnit::SetClock()
 {
 	VALIDATE_OBJECT

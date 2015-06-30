@@ -1297,7 +1297,7 @@ bool CvPlot::comparePlots(CvUnit* pUnit,list<DirectionTypes> ankorToPlot1, list<
 	list<DirectionTypes>::iterator it1 = ankorToPlot1.begin();
 	list<DirectionTypes>::iterator it2 = ankorToPlot2.begin();
 	//use comparison if either theyre both more than one turn away, within two turns of relative distance, or were at perimeter
-	if((ankorToPlot1.size() <= 4 && ankorToPlot2.size() <= 4 && pEconomicAI->GetAtMiddle())/*abs((int)ankorToPlot1.size() - (int)ankorToPlot2.size()) == 0 */|| (!pEconomicAI->GetAtMiddle() && !pEconomicAI->GetAtStepIn()))
+	if((ankorToPlot1.size() <= 4 && ankorToPlot2.size() <= 4 && pEconomicAI->GetAtMiddle()) || (!pEconomicAI->GetAtMiddle() && !pEconomicAI->GetAtStepIn()))
 	{
 		for(;it1 != ankorToPlot1.end() && it2 != ankorToPlot2.end(); it1++, it2++)
 		{
@@ -7887,8 +7887,9 @@ TeamTypes CvPlot::getRevealedTeam(TeamTypes eTeam) const
 }
 //JR_MODS
 #if defined(JR_DLL)
-bool CvPlot::hasAdjacentTarget(TeamTypes eTeam, CvEconomicAI* pEconomicAI) const
+pair<CvPlot*,bool> CvPlot::hasAdjacentTarget(TeamTypes eTeam, CvEconomicAI* pEconomicAI) const
 {
+	pair<CvPlot*,bool> target (NULL,false);
 	for(int iI = 0; iI < NUM_DIRECTION_TYPES; ++iI)
 	{
 		CvPlot* pAdjacentPlot = plotDirection(getX(), getY(), ((DirectionTypes)iI));
@@ -7897,11 +7898,13 @@ bool CvPlot::hasAdjacentTarget(TeamTypes eTeam, CvEconomicAI* pEconomicAI) const
 		{
 			if(pEconomicAI->GetExplorationTargets().find(pAdjacentPlot) != pEconomicAI->GetExplorationTargets().end())
 			{
-				return true;
+				target.first = pAdjacentPlot;
+				target.second = true;
+				return target;
 			}
 		}
 	}
-	return false;
+	return target;
 
 }
 bool CvPlot::hasAdjacentRevealed(TeamTypes eTeam) const
@@ -7941,6 +7944,7 @@ bool CvPlot::hasAdjacentCoastal() const
 	}
 	return false;
 }
+
 bool CvPlot::isVisited() const
 {
 	return m_visited;
