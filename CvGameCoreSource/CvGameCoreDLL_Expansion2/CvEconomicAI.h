@@ -181,7 +181,7 @@ public:
 	int               GetJRNumberOfRevealed();
 	int               GetJRNumberOfEndExplorePoints();
 	set<CvPlot*>&      GetExplorationTargets();
-	void              SetExplorationTargets(bool perimeter, TeamTypes eTeam);
+	void              SetExplorationTargets(bool perimeter, TeamTypes eTeam, CvPlot* closest);
 	void SetAtEnd(bool atEnd);
 	bool GetAtEnd();
 	void SetAtMiddle(bool atMiddle);
@@ -192,12 +192,16 @@ public:
 	void SetAnkor(CvPlot* ankor);
 	CvPlot* GetMicroGreedyExplorePlot(CvPlot* pPlot, TeamTypes eTeam,int iRange,  DomainTypes eDomainType);
 	map<CvPlot*,CvPlot*>& GetTargetLookUpTable();
+	void SetMiddleOfTargets();
+	int GetMiddleX() const;
+	int GetMiddleY() const;
 #endif
 	FFastVector<int>& GetExplorationPlots();
 	FFastVector<int>& GetExplorationPlotRatings();
 	FFastVector<int>& GetGoodyHutPlots();
 	CvPlot* GetUnitTargetGoodyPlot(CvUnit* pUnit, CvPlot** ppkStepPlot = NULL);
 	void ClearUnitTargetGoodyStepPlot(CvUnit* pUnit);
+	void BuildExplorationTargets(CvPlot* closest, TeamTypes eTeam);
 
 //JR_MODS 
 #if defined(JR_DLL)
@@ -322,6 +326,8 @@ private:
 	bool m_atStepIn;
 	CvPlot* m_ankor;
 	map<CvPlot*,CvPlot*> m_TargetLookUpTable;
+	int m_MiddleX;
+	int m_MiddleY;
 	
 #endif
 	struct GoodyHutUnitAssignment

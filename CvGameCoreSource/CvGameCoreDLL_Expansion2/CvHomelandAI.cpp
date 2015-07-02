@@ -2285,6 +2285,13 @@ void CvHomelandAI::ExecuteExplorerMoves()
 #if defined(JR_DLL)
 		//do pass to see if we need to recalculate targets
 		bool targetFound = false;
+		if(pUnit->GetAutomateToggle() == 6 && (pEconomicAI->GetAtMiddle() || pEconomicAI->GetAtStepIn()))
+		{
+			CvPlot* closestUnrevealed = pUnit->plot()->GetNearestUnrevealed(eTeam,pEconomicAI);
+			pEconomicAI->SetExplorationTargets(false,eTeam,closestUnrevealed);
+			pEconomicAI->SetMiddleOfTargets();
+			pEconomicAI->UpdatePlots();
+		}
 		if(pUnit->GetAutomateToggle() == 5 || (pUnit->GetAutomateToggle() == 6 && (pEconomicAI->GetAtMiddle() || pEconomicAI->GetAtStepIn())))
 		{
 			set<CvPlot*>::iterator it;
@@ -2297,21 +2304,38 @@ void CvHomelandAI::ExecuteExplorerMoves()
 				}
 				int iDistance = plotDistance(iUnitX, iUnitY, pEvalPlot->getX(), pEvalPlot->getY());
 				//then we're good
-				if(iDistance <= 4)
+				if(iDistance <= 3)
 				{
 					targetFound = true;
 				}
 				
 			}
-			//reset targets / update plots
+		//	/*if(pEconomicAI->GetExplorationTargets().size() > 1 && pEconomicAI->GetExplorationPlotsDirection().size() > 1)
+		//	{
+		//		targetFound = true;
+		//	}*/
+		//	//reset targets / update plots
+		//	if(!targetFound)
+		//	{
+		//		//need to find closest target. 
+		//		CvPlot* closestUnrevealed = pUnit->plot()->GetNearestUnrevealed(eTeam,pEconomicAI);
+		//		pEconomicAI->SetExplorationTargets(false,eTeam,closestUnrevealed);
+		//		pEconomicAI->SetMiddleOfTargets();
+		//		pEconomicAI->SetAtMiddle(false);
+		//		pEconomicAI->SetAtStepIn(true);
+		//		pEconomicAI->UpdatePlots();
+		//	}
+		//	//target was found, if at step in transition to middle
+		//	else{
+		//		pEconomicAI->SetAtMiddle(true);
+		//		pEconomicAI->SetAtStepIn(false);
+		//	}
+		//}
 			if(!targetFound)
 			{
-				pEconomicAI->SetExplorationTargets(false,eTeam);
 				pEconomicAI->SetAtMiddle(false);
 				pEconomicAI->SetAtStepIn(true);
-				pEconomicAI->UpdatePlots();
 			}
-			//target was found, if at step in transition to middle
 			else{
 				pEconomicAI->SetAtMiddle(true);
 				pEconomicAI->SetAtStepIn(false);
@@ -2331,7 +2355,10 @@ void CvHomelandAI::ExecuteExplorerMoves()
 					//find new interior perimeter
 					pEconomicAI->SetAtStepIn(true);
 					//reset targets
-					pEconomicAI->SetExplorationTargets(false,eTeam);
+					//find closest target
+					CvPlot* closestUnrevealed = pUnit->plot()->GetNearestUnrevealed(eTeam,pEconomicAI);
+					pEconomicAI->SetExplorationTargets(false,eTeam,closestUnrevealed);
+					pEconomicAI->SetMiddleOfTargets();
 					pEconomicAI->UpdatePlots();
 				}
 			}
@@ -2352,7 +2379,10 @@ void CvHomelandAI::ExecuteExplorerMoves()
 						//find new interior perimeter
 						pEconomicAI->SetAtStepIn(true);
 						//reset targets
-						pEconomicAI->SetExplorationTargets(false,eTeam);
+						//find closest target
+						CvPlot* closestUnrevealed = pUnit->plot()->GetNearestUnrevealed(eTeam,pEconomicAI);
+						pEconomicAI->SetExplorationTargets(false,eTeam,closestUnrevealed);
+						pEconomicAI->SetMiddleOfTargets();
 						pEconomicAI->UpdatePlots();
 					}
 					//clear the stack
@@ -2851,14 +2881,28 @@ void CvHomelandAI::ExecuteExplorerMoves()
 									{
 										continue;
 									}
+									
+									CvPlot* pBestLookUpTarget = pEconomicAI->GetTargetLookUpTable()[pBestTarget];
+									CvPlot* pLookUpTarget = pEconomicAI->GetTargetLookUpTable()[pPlot];
 									GC.getPathFinder().GetPathDirections(currPath);
-									if(CvPlot::comparePlots(pUnit.pointer(),bestPath,currPath,pEconomicAI))
+									if(pEconomicAI->GetAtMiddle() || pEconomicAI->GetAtStepIn())
+									{
+										if(CvPlot::comparePlots(pUnit.pointer(),pEconomicAI,pBestLookUpTarget,pLookUpTarget,pBestTarget,pPlot))
+										{
+											pBestPlot = pEndTurnPlot;
+											bestPath = currPath;
+											iBestPlotScore = iPlotScore;
+											pBestTarget = pPlot;
+										}
+									}
+									else if(CvPlot::comparePlots(pUnit.pointer(),bestPath,currPath,pEconomicAI))
 									{
 										pBestPlot = pEndTurnPlot;
 										bestPath = currPath;
 										iBestPlotScore = iPlotScore;
 										pBestTarget = pPlot;
 									}
+									
 								}
 								else{
 #endif
@@ -2920,9 +2964,19 @@ void CvHomelandAI::ExecuteExplorerMoves()
 										{
 											continue;
 										}
+										CvPlot* pBestLookUpTarget = pEconomicAI->GetTargetLookUpTable()[pBestTarget];
+										CvPlot* pLookUpTarget = pEconomicAI->GetTargetLookUpTable()[pPlot];
 										GC.getPathFinder().GetPathDirections(currPath);
-
-										if(CvPlot::comparePlots(pUnit.pointer(),bestPath,currPath,pEconomicAI))
+										if(pEconomicAI->GetAtMiddle() || pEconomicAI->GetAtStepIn())
+										{
+											if(CvPlot::comparePlots(pUnit.pointer(),pEconomicAI,pBestLookUpTarget,pLookUpTarget,pBestTarget,pPlot))
+											{
+												pBestPlot = pEndTurnPlot;
+												bestPath = currPath;
+												pBestTarget = pPlot;
+											}
+										}
+										else if(CvPlot::comparePlots(pUnit.pointer(),bestPath,currPath,pEconomicAI))
 										{
 											pBestPlot = pEndTurnPlot;
 											bestPath = currPath;
@@ -2957,27 +3011,28 @@ void CvHomelandAI::ExecuteExplorerMoves()
 		{
 //JR_MODS
 #if defined(JR_DLL)
-			if(pUnit->GetAutomateToggle() == 6 && pEconomicAI->GetAtMiddle())
-			{
-				//if this is the case, then we have determined the best plot out of our explore plots.
-				//lookup the best target from explore->target loopup table
-				CvPlot* pBestLookUpTarget = pEconomicAI->GetTargetLookUpTable()[pBestTarget];
-				if(pBestLookUpTarget)
-				{
-					CvPlot* bestTarget = pEconomicAI->GetMicroGreedyExplorePlot(pBestLookUpTarget,eTeam,iBaseSightRange,pUnit->getDomainType());
-					if(bestTarget)
-					{
-						bool canfindpath = GC.getPathFinder().GenerateUnitPath(pUnit.pointer(), iUnitX, iUnitY, bestTarget->getX(), bestTarget->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
-						//pBestPlot = GC.getPathFinder().GetPathEndTurnPlot();
-						if(canfindpath)
-						{
-							GC.getPathFinder().GetPathDirections(bestPath);
-							pBestTarget = bestTarget;
-						}
-					}
-				}
+			//microgreedy strat
+			//if(pUnit->GetAutomateToggle() == 6 && pEconomicAI->GetAtMiddle())
+			//{
+			//	//if this is the case, then we have determined the best plot out of our explore plots.
+			//	//lookup the best target from explore->target loopup table
+			//	CvPlot* pBestLookUpTarget = pEconomicAI->GetTargetLookUpTable()[pBestTarget];
+			//	if(pBestLookUpTarget)
+			//	{
+			//		CvPlot* bestTarget = pEconomicAI->GetMicroGreedyExplorePlot(pBestLookUpTarget,eTeam,iBaseSightRange,pUnit->getDomainType());
+			//		if(bestTarget)
+			//		{
+			//			bool canfindpath = GC.getPathFinder().GenerateUnitPath(pUnit.pointer(), iUnitX, iUnitY, bestTarget->getX(), bestTarget->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER /*iFlags*/, true/*bReuse*/);
+			//			//pBestPlot = GC.getPathFinder().GetPathEndTurnPlot();
+			//			if(canfindpath)
+			//			{
+			//				GC.getPathFinder().GetPathDirections(bestPath);
+			//				pBestTarget = bestTarget;
+			//			}
+			//		}
+			//	}
 
-			}
+			//}
 #endif
 			CvAssertMsg(!pUnit->atPlot(*pBestPlot), "Exploring unit is already at the best place to explore");
 //JR_MODS
@@ -3103,7 +3158,7 @@ void CvHomelandAI::ExecuteExplorerMoves()
 						if(pBestPlot->isAtTheEnd(eTeam,true,pEconomicAI))
 						{
 							pEconomicAI->SetAtEnd(true);
-							pEconomicAI->SetExplorationTargets(true,eTeam);
+							pEconomicAI->SetExplorationTargets(true,eTeam,NULL);
 							pUnit->SetPrevDirection(bestPath.back());
 							pUnit->SetOrientation(bestPath.back());
 							pEconomicAI->UpdatePlots();

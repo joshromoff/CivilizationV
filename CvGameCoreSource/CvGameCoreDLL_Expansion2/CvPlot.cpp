@@ -1279,7 +1279,71 @@ CvPlot* CvPlot::getNearestLandPlot() const
 }
 //JR_MODS
 #if defined(JR_DLL)
+CvPlot* CvPlot::GetNearestUnrevealed(TeamTypes eTeam, CvEconomicAI* pEconomicAI) const
+{
+	CvPlot* bestPlot = NULL;
+	CvPlot* pPlot;
+	float iDistance = 10000000;
+	for(int i = 0; i < GC.getMap().numPlots(); i++)
+	{
+		pPlot = GC.getMap().plotByIndexUnchecked(i);
+		if(pPlot && !pPlot->isRevealed(eTeam) && pPlot->hasAdjacentRevealed(eTeam) &&  pPlot->getArea() == pEconomicAI->GetPlayer()->getStartingPlot()->getArea())
+		{
+			float curDistance = plotDistance(getX(),getY(),pPlot->getX(),pPlot->getY());
+			if(curDistance < iDistance)
+			{
+				iDistance = curDistance;
+				bestPlot = pPlot;
+			}
+		}	
+	}
+	return bestPlot;
+}
+bool CvPlot::comparePlots(CvUnit* pUnit, CvEconomicAI* pEconomicAI, CvPlot* plot1, CvPlot* plot2, CvPlot* plot1EndTurn, CvPlot* plot2EndTurn)
+{
+	//handle nulls shouldnt technically happen
+	if((plot1EndTurn && !plot2EndTurn) || (plot1 && !plot2) )
+	{
+		return false;
+	}
+	if((plot2EndTurn && !plot1EndTurn)|| (!plot1 && plot2))
+	{
+		return true;
+	}
+	//if a set is null return false
+	if((!plot2EndTurn && !plot1EndTurn)|| (!plot1 && !plot2))
+	{
+		return false;
+	}
+	//if they are the same then choose best greedy plot
+	if(plot1 == plot2 && plot1EndTurn && plot2EndTurn)
+	{
+		float distance1 = plotDistance(pUnit->plot()->getX(),pUnit->plot()->getY(),plot1EndTurn->getX(),plot1EndTurn->getY());
+		float distance2 = plotDistance(pUnit->plot()->getX(),pUnit->plot()->getY(),plot2EndTurn->getX(),plot2EndTurn->getY());
+		return !((float)pEconomicAI->ScoreExplorePlotGreedy(plot1EndTurn,pUnit->getTeam(),pUnit->getUnitInfo().GetBaseSightRange(),pUnit->getDomainType())/distance1 > 
+			(float)pEconomicAI->ScoreExplorePlotGreedy(plot2EndTurn,pUnit->getTeam(),pUnit->getUnitInfo().GetBaseSightRange(),pUnit->getDomainType())/distance2);
+		
+	}
+	//if were at the step in return the closer one.
+	float distance1 = plotDistance(pUnit->plot()->getX(),pUnit->plot()->getY(),plot1->getX(),plot1->getY());
+	float distance2 = plotDistance(pUnit->plot()->getX(),pUnit->plot()->getY(),plot2->getX(),plot2->getY());
+	if(pEconomicAI->GetAtStepIn() /*|| ((distance1 <= 3 || distance2 <= 3) && distance1 != distance2)*/)
+	{
+		return !( distance1 < distance2);
+	}
+	
+	//sort by using middle of unseen as ankor, and current plot as starting.
+	bool cLess1 = isLessThan(pUnit->plot(),plot1, pEconomicAI);
+	bool cLess2 = isLessThan(pUnit->plot(),plot2, pEconomicAI);
+	bool p2Lessp1 = isLessThan(plot2,plot1, pEconomicAI);
+	if((cLess1 && cLess2) || (!cLess1 && ! cLess2))
+	{
+		return p2Lessp1;
+	}
+	//otherwise on either side
+	return !p2Lessp1;
 
+}
 /*northeast>east>southeast>southwest>west>northwest>north> returns true if ankortoplot2 is better*/
 bool CvPlot::comparePlots(CvUnit* pUnit,list<DirectionTypes> ankorToPlot1, list<DirectionTypes> ankorToPlot2, CvEconomicAI* pEconomicAI)
 {
@@ -1297,35 +1361,61 @@ bool CvPlot::comparePlots(CvUnit* pUnit,list<DirectionTypes> ankorToPlot1, list<
 	list<DirectionTypes>::iterator it1 = ankorToPlot1.begin();
 	list<DirectionTypes>::iterator it2 = ankorToPlot2.begin();
 	//use comparison if either theyre both more than one turn away, within two turns of relative distance, or were at perimeter
-	if((ankorToPlot1.size() <= 4 && ankorToPlot2.size() <= 4 && pEconomicAI->GetAtMiddle()) || (!pEconomicAI->GetAtMiddle() && !pEconomicAI->GetAtStepIn()))
+	
+	for(;it1 != ankorToPlot1.end() && it2 != ankorToPlot2.end(); it1++, it2++)
 	{
-		for(;it1 != ankorToPlot1.end() && it2 != ankorToPlot2.end(); it1++, it2++)
+		if(*it1 == *it2)
 		{
-			if(*it1 == *it2)
+			//if we made a left turn, we need to make another one.
+			if(startingDirection == *it1)
 			{
-				//if we made a left turn, we need to make another one.
-				if(startingDirection == *it1)
-				{
-					startingDirection = getDirLeft((DirectionTypes) startingDirection);
-				}
-				continue;
+				startingDirection = getDirLeft((DirectionTypes) startingDirection);
 			}
-			if(*it1 >= startingDirection && *it2 < startingDirection)
-			{
-				return false;
-			}
-			if(*it2 >= startingDirection && *it1 < startingDirection)
-			{
-				return true;
-			}
-			return (*it2<*it1);
+			continue;
 		}
+		if(*it1 >= startingDirection && *it2 < startingDirection)
+		{
+			return false;
+		}
+		if(*it2 >= startingDirection && *it1 < startingDirection)
+		{
+			return true;
+		}
+		return (*it2<*it1);
 	}
+	
+	
+	
 	//havent found a path yet so return the shorter one
 	return (ankorToPlot1.size() <= ankorToPlot2.size()) ? false : true;
 
 }
 
+bool CvPlot::isLessThan(CvPlot* plot1,CvPlot* plot2, CvEconomicAI* pEconomicAI)
+{
+	if (plot1->getX() - pEconomicAI->GetMiddleX() >= 0 && plot2->getX() - pEconomicAI->GetMiddleX() < 0)
+        return true;
+    if (plot1->getX() - pEconomicAI->GetMiddleX() < 0 && plot2->getX() - pEconomicAI->GetMiddleX() >= 0)
+        return false;
+    if (plot1->getX() - pEconomicAI->GetMiddleX() == 0 && plot2->getX() - pEconomicAI->GetMiddleX() == 0) {
+        if (plot1->getY() - pEconomicAI->GetMiddleY() >= 0 || plot2->getY() - pEconomicAI->GetMiddleY() >= 0)
+            return plot1->getY() > plot2->getY();
+        return plot2->getY() > plot1->getY();
+    }
+
+    // compute the cross product of vectors (center -> a) x (center -> b)
+    int det = (plot1->getX() - pEconomicAI->GetMiddleX()) * (plot2->getY() - pEconomicAI->GetMiddleY()) - (plot2->getX() - pEconomicAI->GetMiddleX()) * (plot1->getY() - pEconomicAI->GetMiddleY());
+    if (det < 0)
+        return true;
+    if (det > 0)
+        return false;
+
+    // points a and b are on the same line from the center
+    // check which point is further from the center
+	int d1 = plotDistance(pEconomicAI->GetMiddleX(),pEconomicAI->GetMiddleY(),plot1->getX(),plot1->getY());
+    int d2 = plotDistance(pEconomicAI->GetMiddleX(),pEconomicAI->GetMiddleY(),plot2->getX(),plot2->getY());
+    return d1 > d2;
+}
 #endif
 //	--------------------------------------------------------------------------------
 int CvPlot::seeFromLevel(TeamTypes eTeam) const

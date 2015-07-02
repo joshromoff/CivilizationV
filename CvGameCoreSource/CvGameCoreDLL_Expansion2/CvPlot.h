@@ -137,9 +137,12 @@ public:
 	CvPlot* getNearestLandPlotInternal(int iDistance) const;
 	int getNearestLandArea() const;
 	CvPlot* getNearestLandPlot() const;
-#if defined(JR_DLL)
 	
+#if defined(JR_DLL)
+	static bool isLessThan(CvPlot* plot1,CvPlot* plot2, CvEconomicAI* pEconomicAI);
 	static bool comparePlots(CvUnit* pUnit,list<DirectionTypes> ankorToPlot1, list<DirectionTypes> ankorToPlot2, CvEconomicAI* pEconomicAI);
+	static bool comparePlots(CvUnit* pUnit, CvEconomicAI* pEconomicAI, CvPlot* plot1, CvPlot* plot2, CvPlot* plot1EndTurn, CvPlot* plot2EndTurn);
+	CvPlot* GetNearestUnrevealed(TeamTypes eTeam, CvEconomicAI* pEconomicAI) const;
 #endif
 	int seeFromLevel(TeamTypes eTeam) const;
 	int seeThroughLevel(bool bIncludeShubbery=true) const;

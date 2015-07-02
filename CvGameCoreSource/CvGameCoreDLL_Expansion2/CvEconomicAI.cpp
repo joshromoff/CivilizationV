@@ -962,6 +962,14 @@ void AppendToLog(CvString& strHeader, CvString& strLog, CvString strHeaderValue,
 
 //JR_MODS
 #if defined(JR_DLL)
+int CvEconomicAI::GetMiddleX() const
+{
+	return m_MiddleX;
+}
+int CvEconomicAI::GetMiddleY() const
+{
+	return m_MiddleY;
+}
 void CvEconomicAI::SetAnkor(CvPlot* ankor)
 {
 	m_ankor = ankor;
@@ -974,27 +982,55 @@ set<CvPlot*>& CvEconomicAI::GetExplorationTargets()
 {
 	return m_ExplorationTargets;
 }
-void CvEconomicAI::SetExplorationTargets(bool perimeter,TeamTypes eTeam)
+void CvEconomicAI::SetExplorationTargets(bool perimeter,TeamTypes eTeam,CvPlot* closest)
 {
 	GetExplorationTargets().clear();
 	CvPlot* pPlot;
-	for(int i = 0; i < GC.getMap().numPlots(); i++)
+	if(perimeter)
 	{
-		pPlot = GC.getMap().plotByIndexUnchecked(i);
-		if(perimeter)
+		for(int i = 0; i < GC.getMap().numPlots(); i++)
 		{
+			pPlot = GC.getMap().plotByIndexUnchecked(i);
+			
 			if(!pPlot->isVisited() /*&& pPlot->isCoastalLand()*/ &&  pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea() && pPlot->hasAdjacentCoastal())
 			{
 				GetExplorationTargets().insert(pPlot);
 			}
 		}
-		else{
-			if(pPlot && !pPlot->isRevealed(eTeam) && pPlot->hasAdjacentRevealed(eTeam) &&  pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea())
+	}
+	else{
+		BuildExplorationTargets(closest,eTeam);
+	}
+
+}
+void CvEconomicAI::BuildExplorationTargets(CvPlot* closest, TeamTypes eTeam)
+{
+	GetExplorationTargets().insert(closest);
+	for(int iI = 0; iI < NUM_DIRECTION_TYPES; ++iI)
+	{
+		CvPlot* pPlot = plotDirection(closest->getX(), closest->getY(), ((DirectionTypes)iI));
+
+		if(pPlot && !pPlot->isRevealed(eTeam) && pPlot->hasAdjacentRevealed(eTeam) &&  pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea())
+		{
+			//if its not in the list, build from heer
+			if(GetExplorationTargets().find(pPlot) == GetExplorationTargets().end())
 			{
-				GetExplorationTargets().insert(pPlot);
+				BuildExplorationTargets(pPlot,eTeam);
 			}
 		}
 	}
+}
+void CvEconomicAI::SetMiddleOfTargets() 
+{
+	int xTotal = 0;
+	int yTotal = 0;
+	for(set<CvPlot*>::iterator it = m_ExplorationTargets.begin(); it != m_ExplorationTargets.end(); it++)
+	{
+		xTotal += (*it)->getX();
+		yTotal += (*it)->getY();
+	}
+	m_MiddleX = xTotal/m_ExplorationTargets.size();
+	m_MiddleY = yTotal/m_ExplorationTargets.size();
 
 }
 CvArea* CvEconomicAI::getBiggestOcean() const
@@ -2781,16 +2817,17 @@ void CvEconomicAI::UpdatePlots()
 #if defined(JR_DLL)
 	m_JRNumberOfRevealed = 0;
 	m_JRNumberOfEndExplorePoints = 0;
-	if(GetExplorationTargets().size() == 0)
+	/*if(GetExplorationTargets().size() == 0)
 	{
 		if(GetAtMiddle() || GetAtStepIn())
 		{
 			SetExplorationTargets(false,ePlayerTeam);
+			SetMiddleOfTargets();
 		}
 		else{
 			SetExplorationTargets(true,ePlayerTeam);
 		}
-	}
+	}*/
 #endif
 
 	CvPlot* pPlot;
