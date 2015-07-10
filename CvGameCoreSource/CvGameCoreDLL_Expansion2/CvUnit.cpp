@@ -915,10 +915,22 @@ void CvUnit::reset(int iID, UnitTypes eUnit, PlayerTypes eOwner, bool bConstruct
 #if defined(JR_MODS_H)
 	m_eAutomateToggle = 0;
 	m_eJScore = 0;
-	m_prevDirection = DIRECTION_NORTHEAST;
+	//m_prevDirection = DIRECTION_NORTHEAST;
 	m_prevDestination = NULL;
 	m_clock = true;
-	m_orientation = DIRECTION_NORTHEAST;
+	m_atMiddle = false;
+	m_atEnd = false;
+	m_EndStack.clear();
+	//m_initialOrientation = DIRECTION_SOUTHEAST;
+	//m_orientation = DIRECTION_SOUTHEAST;
+	/*if(getOwner())
+	{
+		if(GET_PLAYER(getOwner()).GetEconomicAI())
+		{
+			m_initialOrientation = GET_PLAYER(getOwner()).GetEconomicAI()->GetNextUnitDirection();
+		}
+	}*/
+	
 #endif
 	m_kLastPath.clear();
 	m_uiLastPathCacheDest = (uint)-1;
@@ -18546,8 +18558,23 @@ bool CvUnit::IsAutomated() const
 
 //  --------------------------------------------------------------------------------
 #if defined(JR_MODS_H)
-
-vector<CvPlot*>& CvUnit::GetEndStack()
+void CvUnit::SetAtEnd(bool atEnd)
+{
+	m_atEnd = atEnd;
+}
+bool CvUnit::GetAtEnd()
+{
+	return m_atEnd;
+}
+void CvUnit::SetAtMiddle(bool atMiddle)
+{
+	m_atMiddle = atMiddle;
+}
+bool CvUnit::GetAtMiddle()
+{
+	return m_atMiddle;
+}
+list<CvPlot*>& CvUnit::GetEndStack()
 {
 	VALIDATE_OBJECT
 	return m_EndStack;
@@ -18561,6 +18588,16 @@ bool CvUnit::GetClock()
 {
 	VALIDATE_OBJECT
 	return m_clock;
+}
+void CvUnit::SetInitialOrientation(DirectionTypes eDirection)
+{
+	VALIDATE_OBJECT
+	m_initialOrientation = eDirection;
+}
+DirectionTypes CvUnit::GetInitialOrientation()
+{
+	VALIDATE_OBJECT
+	return m_initialOrientation;
 }
 void CvUnit::SetOrientation(DirectionTypes eDirection)
 {
@@ -18584,7 +18621,7 @@ CvPlot* CvUnit::GetPrevDestination()
 	VALIDATE_OBJECT
 	return m_prevDestination;
 }
-//JR_MODS : void SetPrevDirection(DirectionTypes eDirection)
+//JR_MODS : void SetPrevDirection(DirectionTypes eDirection) 
 void CvUnit::SetPrevDirection(DirectionTypes eDirection)
 {
 	VALIDATE_OBJECT
@@ -18600,7 +18637,15 @@ DirectionTypes CvUnit::GetPrevDirection()
 void CvUnit::SetAutomateToggle(int t)
 {
 	VALIDATE_OBJECT
+	
 	m_eAutomateToggle = t;
+
+	SetInitialOrientation(GET_PLAYER(getOwner()).GetEconomicAI()->GetNextUnitDirection());
+
+	//SetInitialOrientation(DIRECTION_SOUTHEAST);
+	SetOrientation(GetInitialOrientation());
+	
+	
 }
 
 //  --------------------------------------------------------------------------------

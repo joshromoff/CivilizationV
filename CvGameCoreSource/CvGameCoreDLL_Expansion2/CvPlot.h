@@ -139,10 +139,13 @@ public:
 	CvPlot* getNearestLandPlot() const;
 	
 #if defined(JR_DLL)
-	static bool isLessThan(CvPlot* plot1,CvPlot* plot2, CvEconomicAI* pEconomicAI);
+	static bool isLessThan(CvPlot* plot1,CvPlot* plot2, int middleX, int middleY);
 	static bool comparePlots(CvUnit* pUnit,list<DirectionTypes> ankorToPlot1, list<DirectionTypes> ankorToPlot2, CvEconomicAI* pEconomicAI);
 	static bool comparePlots(CvUnit* pUnit, CvEconomicAI* pEconomicAI, CvPlot* plot1, CvPlot* plot2, CvPlot* plot1EndTurn, CvPlot* plot2EndTurn);
 	CvPlot* GetNearestUnrevealed(TeamTypes eTeam, CvEconomicAI* pEconomicAI) const;
+	pair<CvPlot*,DirectionTypes> GetNearestAdjacentUnrevealed( TeamTypes eTeam, CvEconomicAI* pEconomicAI) const;
+	CvPlot* getAdjacentUnrevealed(TeamTypes eTeam, CvEconomicAI* pEcnomicAI) const;
+	bool isAdjacentNonrevealedNotInSet(TeamTypes eTeam,CvEconomicAI* pEconomicAI) const;
 #endif
 	int seeFromLevel(TeamTypes eTeam) const;
 	int seeThroughLevel(bool bIncludeShubbery=true) const;
@@ -597,6 +600,7 @@ public:
 	bool setRevealed(TeamTypes eTeam, bool bNewValue, bool bTerrainOnly = false, TeamTypes eFromTeam = NO_TEAM);
 //JR_MODS
 #if defined(JR_DLL)
+	pair<CvPlot*,bool> hasAdjacentPotTarget(TeamTypes eTeam, CvEconomicAI* pEconomicAI) const;
 	pair<CvPlot*,bool> hasAdjacentTarget(TeamTypes eTeam, CvEconomicAI* pEconomicAI) const;
 	bool hasAdjacentRevealed(TeamTypes eTeam) const;
 	bool hasAdjacentCoastal() const;
@@ -609,7 +613,21 @@ public:
 	{
 		return (dir == DIRECTION_NORTHEAST) ? DIRECTION_NORTHWEST : (DirectionTypes) (dir -1);
 	}
-
+	static inline DirectionTypes getDirOp(DirectionTypes dir) 
+	{
+		return (dir == DIRECTION_NORTHEAST) ? DIRECTION_SOUTHWEST : (DirectionTypes) (dir -3);
+	}
+	static inline void getDirection(DirectionTypes start,vector<DirectionTypes>& Directions)
+	{
+		for(int i = start; i < NUM_DIRECTION_TYPES; i++)
+		{
+			Directions.push_back((DirectionTypes)i);
+		}
+		for(int i = 0; i <start; i++)
+		{
+			Directions.push_back((DirectionTypes)i);
+		}
+	}
 	static inline bool wasClockwise(vector<CvPlot*> endStack)
 	{
 		int sum = 0;
@@ -620,13 +638,38 @@ public:
 			sum += ((nextPlot->getX() - curPlot->getX()) * (nextPlot->getY() + curPlot->getY()));
 		}
 		//add up last point with first point
-		sum += ((endStack.front()->getX() - endStack.back()->getX()) * (endStack.front()->getY() + endStack.back()->getY()));
+		//sum += ((endStack.front()->getX() - endStack.back()->getX()) * (endStack.front()->getY() + endStack.back()->getY()));
 		//cw
 		if(sum >= 0)
 		{
 			return true;
 		}
 		//otherwise ccw
+		return false;
+	}
+	static inline bool stackCombine(list<list<CvPlot*>*> stackOfStacks,list<CvPlot*>* curSet,vector<CvPlot*>& combined)
+	{
+		//add starting set to combined vector
+		combined.insert(combined.end(),curSet->begin(),curSet->end());
+		//we finished the loop 
+		if(combined.front() == combined.back() && combined.size() > 1)
+		{
+			return true;
+		}
+
+		//need to try to find connector.
+		//we know that back connected to the start of another set.
+		list<list<CvPlot*>*>::iterator it;
+		for(it = stackOfStacks.begin(); it != stackOfStacks.end(); it++)
+		{
+			//found connection
+			if((*it)->front() == combined.back())
+			{
+				//call stackCombine recursively
+				return stackCombine(stackOfStacks,*it,combined);
+				//return true;
+			}
+		}
 		return false;
 	}
 

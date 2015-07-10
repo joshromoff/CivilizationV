@@ -11,6 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <tuple>
 #endif
 
 // LUA API wrappers

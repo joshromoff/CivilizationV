@@ -7,7 +7,7 @@
 			<Where Type="ERA_ANCIENT" />
 		</Update>
 		<Update>
-			<Set StartingExploreUnits="1" />
+			<Set StartingExploreUnits="2" />
 			<Where Type="ERA_ANCIENT" />
 		</Update>
 	</Eras>

@@ -145,7 +145,14 @@ public:
 	int  GetJScore() const;
 	void SetPrevDirection(DirectionTypes eDirection);
 	DirectionTypes GetPrevDirection();
-	vector<CvPlot*>& GetEndStack();
+	list<CvPlot*>& GetEndStack();
+	void SetAtMiddle(bool atMiddle);
+	bool GetAtMiddle();
+	void SetAtEnd(bool atEnd);
+	bool GetAtEnd();
+	void SetInitialOrientation(DirectionTypes eDirection);
+	DirectionTypes GetInitialOrientation();
+	
 	
 #endif
 	void SetAutomateType(AutomateTypes eNewValue);
@@ -1467,9 +1474,12 @@ protected:
 	int m_eJScore;
 	DirectionTypes m_prevDirection;
 	DirectionTypes m_orientation;
+	DirectionTypes m_initialOrientation;
 	CvPlot* m_prevDestination;
 	bool m_clock;
-	vector<CvPlot*> m_EndStack;
+	list<CvPlot*> m_EndStack;
+	bool m_atMiddle;
+	bool m_atEnd;
 	
 #endif
 	FAutoVariable<AutomateTypes, CvUnit> m_eAutomateType;

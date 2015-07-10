@@ -2285,6 +2285,8 @@ int CvLuaUnit::lSetToAutomate(lua_State* L)
 	const AutomateTypes eAutomate = (AutomateTypes)1;
 	const int exploreType = luaL_optint(L, 2, 0);
 	pkUnit->SetAutomateToggle(exploreType);
+	//DirectionTypes initialDirection = pEconomicAI->GetNextUnitDirection();
+	//pkUnit->SetOrientation(initialDirection);
 	//pkUnit->SetAutomateType(eAutomate);
 	
 	

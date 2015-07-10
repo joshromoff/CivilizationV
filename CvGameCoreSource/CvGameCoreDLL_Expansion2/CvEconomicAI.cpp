@@ -335,6 +335,15 @@ void CvEconomicAI::Reset()
 	m_atEnd = false;
 	m_atMiddle = false;
 	m_atStepIn = false;
+	m_atPartialMiddle = false;
+	m_UnitDirections.clear();
+	UnitDirectionCounter = 0;
+	m_ExplorationTargets.clear();
+	m_ankor.clear();
+	m_TargetLookUpTable.clear();
+	m_EndStack.clear();
+	
+
 #endif
 	for(uint ui = 0; ui < m_aiExplorationPlots.size(); ui++)
 	{
@@ -962,6 +971,35 @@ void AppendToLog(CvString& strHeader, CvString& strLog, CvString strHeaderValue,
 
 //JR_MODS
 #if defined(JR_DLL)
+set<CvPlot*>& CvEconomicAI::GetVisited()
+{
+	return m_visited;
+}
+DirectionTypes CvEconomicAI::GetNextUnitDirection()
+{
+	int prevCounter = UnitDirectionCounter;
+	if(m_UnitDirections.size() == 0)
+	{
+		m_UnitDirections.push_back(DIRECTION_NORTHEAST);
+		m_UnitDirections.push_back(DIRECTION_SOUTHWEST);
+		m_UnitDirections.push_back(DIRECTION_NORTHWEST);
+		m_UnitDirections.push_back(DIRECTION_SOUTHEAST);
+		m_UnitDirections.push_back(DIRECTION_WEST);
+		m_UnitDirections.push_back(DIRECTION_EAST);
+	}
+	if(UnitDirectionCounter == m_UnitDirections.size())
+	{
+		UnitDirectionCounter = 0;
+		prevCounter = 0;
+	}
+	UnitDirectionCounter ++;
+	return m_UnitDirections[prevCounter];
+	
+}
+list<list<CvPlot*>*>& CvEconomicAI::GetEndStack() 
+{
+	return m_EndStack;
+}
 int CvEconomicAI::GetMiddleX() const
 {
 	return m_MiddleX;
@@ -972,17 +1010,17 @@ int CvEconomicAI::GetMiddleY() const
 }
 void CvEconomicAI::SetAnkor(CvPlot* ankor)
 {
-	m_ankor = ankor;
+	m_ankor.insert(ankor);
 }
-CvPlot* CvEconomicAI::GetAnkor()
+set<CvPlot*>& CvEconomicAI::GetAnkor()
 {
 	return m_ankor;
 }
-set<CvPlot*>& CvEconomicAI::GetExplorationTargets()
+vector<CvPlot*>& CvEconomicAI::GetExplorationTargets()
 {
 	return m_ExplorationTargets;
 }
-void CvEconomicAI::SetExplorationTargets(bool perimeter,TeamTypes eTeam,CvPlot* closest)
+void CvEconomicAI::SetExplorationTargets(bool perimeter,TeamTypes eTeam,CvPlot* curPlot)
 {
 	GetExplorationTargets().clear();
 	CvPlot* pPlot;
@@ -994,37 +1032,176 @@ void CvEconomicAI::SetExplorationTargets(bool perimeter,TeamTypes eTeam,CvPlot* 
 			
 			if(!pPlot->isVisited() /*&& pPlot->isCoastalLand()*/ &&  pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea() && pPlot->hasAdjacentCoastal())
 			{
-				GetExplorationTargets().insert(pPlot);
+				GetExplorationTargets().push_back(pPlot);
 			}
 		}
 	}
 	else{
-		BuildExplorationTargets(closest,eTeam);
+		//set all unrevealed areas.
+		SetUnrevealedSets();
+		pair<CvPlot*,DirectionTypes> closestAdjacentUnrevealed (curPlot->GetNearestAdjacentUnrevealed(eTeam,this)); 
+		
+		if(closestAdjacentUnrevealed.first)
+		{
+			CvPlot* closest = closestAdjacentUnrevealed.first->getAdjacentUnrevealed(eTeam,this);
+			if(closest)
+			{
+				//insert closest plot
+				GetExplorationTargets().push_back(closest);
+				bool second = false;
+				vector<DirectionTypes> directions;
+				CvPlot::getDirection(CvPlot::getDirOp(closestAdjacentUnrevealed.second),directions);
+				for(int iI = 0; iI < directions.size(); iI++)
+				{
+					CvPlot* pPlot = plotDirection(closest->getX(), closest->getY(), directions[iI]);
+
+					if(pPlot && !pPlot->isRevealed(eTeam) && pPlot->hasAdjacentRevealed(eTeam) &&  pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea())
+					{
+						//if its not in the list, build from heer NE,E<SE<SW<W<NW
+						if(find(GetExplorationTargets().begin(), GetExplorationTargets().end(), pPlot)==GetExplorationTargets().end())
+						{
+							BuildExplorationTargets(pPlot,eTeam,second);
+							//second = true;
+						}
+					}
+				}
+			}
+		}
+		//while we can find a valid target not already in set.
+		//need to find closest target. 
+		/*pair<CvPlot*,DirectionTypes> closestAdjacentUnrevealed (curPlot->GetNearestAdjacentUnrevealed(eTeam,this)); 
+		
+		if(closestAdjacentUnrevealed.first)
+		{
+			CvPlot* closest = closestAdjacentUnrevealed.first->getAdjacentUnrevealed(eTeam,this);
+			if(closest)
+			{
+				//insert closest plot
+				GetExplorationTargets().push_back(closest);
+				bool second = false;
+				vector<DirectionTypes> directions;
+				CvPlot::getDirection(CvPlot::getDirOp(closestAdjacentUnrevealed.second),directions);
+				for(int iI = 0; iI < directions.size(); iI++)
+				{
+					CvPlot* pPlot = plotDirection(closest->getX(), closest->getY(), directions[iI]);
+
+					if(pPlot && !pPlot->isRevealed(eTeam) && pPlot->hasAdjacentRevealed(eTeam) &&  pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea())
+					{
+						//if its not in the list, build from heer NE,E<SE<SW<W<NW
+						if(find(GetExplorationTargets().begin(), GetExplorationTargets().end(), pPlot)==GetExplorationTargets().end())
+						{
+							BuildExplorationTargets(pPlot,eTeam,second);
+							second = true;
+						}
+					}
+				}
+			}
+		}*/
+		
+
+		
 	}
 
 }
-void CvEconomicAI::BuildExplorationTargets(CvPlot* closest, TeamTypes eTeam)
+void CvEconomicAI::BuildExplorationTargets(CvPlot* closest, TeamTypes eTeam, bool second)
 {
-	GetExplorationTargets().insert(closest);
+	//if(!second && find(GetExplorationTargets().begin(), GetExplorationTargets().end(), closest)==GetExplorationTargets().end())
+	//{
+		GetExplorationTargets().push_back(closest);
+	//}
 	for(int iI = 0; iI < NUM_DIRECTION_TYPES; ++iI)
 	{
 		CvPlot* pPlot = plotDirection(closest->getX(), closest->getY(), ((DirectionTypes)iI));
 
 		if(pPlot && !pPlot->isRevealed(eTeam) && pPlot->hasAdjacentRevealed(eTeam) &&  pPlot->getArea() == m_pPlayer->getStartingPlot()->getArea())
 		{
-			//if its not in the list, build from heer
-			if(GetExplorationTargets().find(pPlot) == GetExplorationTargets().end())
+			//if its not in the list, build from heer NE,E<SE<SW<W<NW
+			if(find(GetExplorationTargets().begin(), GetExplorationTargets().end(), pPlot)==GetExplorationTargets().end())
 			{
-				BuildExplorationTargets(pPlot,eTeam);
+				BuildExplorationTargets(pPlot,eTeam,second);
+				//curSecond = true;
 			}
 		}
+	}
+	//if(second && find(GetExplorationTargets().begin(), GetExplorationTargets().end(), closest)==GetExplorationTargets().end())
+	//{
+		GetExplorationTargets().push_back(closest);
+	//}
+}
+//build set of sets
+//loops through plots. if the plot is unrevealed and on the same area as our player and not already in our map. then add it and all its connected neighbours.
+void CvEconomicAI::SetUnrevealedSets()
+{
+	GetUnrevealedSets().clear();
+	CvPlot* pPlot;
+	set<CvPlot*> allViable;
+	for(int i = 0; i < GC.getMap().numPlots(); i++)
+	{
+		pPlot = GC.getMap().plotByIndexUnchecked(i);
+		if(!pPlot)
+		{
+			continue;
+		}
+		if(pPlot->isRevealed(m_pPlayer->getTeam()))
+		{
+			continue;
+		}
+		if(pPlot->getArea() != m_pPlayer->getStartingPlot()->getArea())
+		{
+			continue;
+		}
+		if(allViable.find(pPlot) != allViable.end())
+		{
+			continue;
+		}
+		//get all connected to current that arent already in viable
+		set<CvPlot*> curSet;
+		//add to both sets
+		curSet.insert(pPlot);
+		allViable.insert(pPlot);
+		buildAdjacentUnrevealed(curSet,allViable,pPlot);
+		//now curset is full.
+		//push it to set of sets
+		GetUnrevealedSets().push_back(curSet);
+	}
+}
+
+vector<set<CvPlot*>>& CvEconomicAI::GetUnrevealedSets()
+{
+	return m_unrevealedSets;
+}
+void CvEconomicAI::buildAdjacentUnrevealed(set<CvPlot*>& curSet, set<CvPlot*>& allViable, CvPlot* pPlot)
+{
+	for(int iI = 0; iI < NUM_DIRECTION_TYPES; ++iI)
+	{
+		CvPlot* pAdjacentPlot = plotDirection(pPlot->getX(), pPlot->getY(), ((DirectionTypes)iI));
+		if(!pAdjacentPlot)
+		{
+			continue;
+		}
+		if(pAdjacentPlot->isRevealed(m_pPlayer->getTeam()))
+		{
+			continue;
+		}
+		if(pAdjacentPlot->getArea() != m_pPlayer->getStartingPlot()->getArea())
+		{
+			continue;
+		}
+		if(allViable.find(pAdjacentPlot) != allViable.end())
+		{
+			continue;
+		}
+		//add to both sets
+		curSet.insert(pAdjacentPlot);
+		allViable.insert(pAdjacentPlot);
+		buildAdjacentUnrevealed(curSet,allViable,pAdjacentPlot);
 	}
 }
 void CvEconomicAI::SetMiddleOfTargets() 
 {
 	int xTotal = 0;
 	int yTotal = 0;
-	for(set<CvPlot*>::iterator it = m_ExplorationTargets.begin(); it != m_ExplorationTargets.end(); it++)
+	for(vector<CvPlot*>::iterator it = m_ExplorationTargets.begin(); it != m_ExplorationTargets.end(); it++)
 	{
 		xTotal += (*it)->getX();
 		yTotal += (*it)->getY();
@@ -1222,6 +1399,14 @@ void CvEconomicAI::SetAtEnd(bool atEnd)
 bool CvEconomicAI::GetAtEnd()
 {
 	return m_atEnd;
+}
+void CvEconomicAI::SetAtPartialMiddle(bool atPartialMiddle)
+{
+	m_atPartialMiddle = atPartialMiddle;
+}
+bool CvEconomicAI::GetAtPartialMiddle()
+{
+	return m_atPartialMiddle;
 }
 void CvEconomicAI::SetAtMiddle(bool atMiddle)
 {
@@ -2726,7 +2911,7 @@ void CvEconomicAI::UpdatePlots()
 //JR_MODS
 #if defined(JR_DLL)
 	//set the biggest ocean on turn 1
-	if(GC.getGame().getElapsedGameTurns() == 0)
+	/*if(GC.getGame().getElapsedGameTurns() == 0)
 	{
 		setBiggestOcean(GC.getMap().findBiggestArea(true));
 		for(int i = 0; i < GC.getMap().getNumAreas(); i++)
@@ -2737,7 +2922,7 @@ void CvEconomicAI::UpdatePlots()
 				curArea->setAtWrapper();
 			}
 		}
-	}
+	}*/
 	for(uint ui = 0; ui < m_ExplorationPlotsDirection.size(); ui++)
 	{
 		m_ExplorationPlotsDirection[ui] = -1;
@@ -2901,9 +3086,10 @@ void CvEconomicAI::UpdatePlots()
 		{
 			m_JRNumberOfRevealed ++;
 			// if it was in our targets remove it
-			if(GetExplorationTargets().find(pPlot) != GetExplorationTargets().end())
+			vector<CvPlot*>::iterator it = find(GetExplorationTargets().begin(), GetExplorationTargets().end(), pPlot);
+			if(it != GetExplorationTargets().end()) //found
 			{
-				GetExplorationTargets().erase(pPlot);
+				GetExplorationTargets().erase(it);
 			}
 		}
 		
@@ -2948,8 +3134,8 @@ void CvEconomicAI::UpdatePlots()
 			
 			
 		}
-		pair<CvPlot*,bool> AdjacentTarget (pPlot->hasAdjacentTarget(ePlayerTeam,this));
-		if(((!pPlot->isVisited() || pPlot == GetAnkor()) && !GetAtStepIn() && !GetAtMiddle()) || (AdjacentTarget.second && (GetAtStepIn() || GetAtMiddle())))
+		pair<CvPlot*,bool> AdjacentPotTarget (pPlot->hasAdjacentPotTarget(ePlayerTeam,this));
+		if(((GetVisited().find(pPlot) == GetVisited().end() || GetAnkor().find(pPlot) != GetAnkor().end()) && !GetAtMiddle()) || (AdjacentPotTarget.second && (GetAtMiddle())))
 		{
 			if(m_ExplorationPlotsDirection.size() <= uiJRDirExplorationPlotIndex)
 			{
@@ -2960,9 +3146,14 @@ void CvEconomicAI::UpdatePlots()
 			m_ExplorationPlotRatingsDirection[uiJRDirExplorationPlotIndex] = 1;
 			uiJRDirExplorationPlotIndex++;
 			//if at stepin or atmiddle add to the lookup table
-			if((GetAtStepIn() || GetAtMiddle()) && AdjacentTarget.second)
+			if((GetAtMiddle()) && AdjacentPotTarget.second)
 			{
-				GetTargetLookUpTable()[pPlot] = AdjacentTarget.first;
+				//see if its part of the current target area
+				pair<CvPlot*,bool> AdjacentTarget (pPlot->hasAdjacentTarget(ePlayerTeam,this));
+				if(AdjacentTarget.second)
+				{
+					GetTargetLookUpTable()[pPlot] = AdjacentTarget.first;
+				}
 			}
 		}
 		

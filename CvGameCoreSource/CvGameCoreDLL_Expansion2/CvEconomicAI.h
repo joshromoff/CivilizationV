@@ -180,28 +180,37 @@ public:
 	FFastVector<int>& GetExplorationPlotRatingsDirection();
 	int               GetJRNumberOfRevealed();
 	int               GetJRNumberOfEndExplorePoints();
-	set<CvPlot*>&      GetExplorationTargets();
+	vector<CvPlot*>&      GetExplorationTargets();
 	void              SetExplorationTargets(bool perimeter, TeamTypes eTeam, CvPlot* closest);
 	void SetAtEnd(bool atEnd);
 	bool GetAtEnd();
 	void SetAtMiddle(bool atMiddle);
 	bool GetAtMiddle();
+	void SetAtPartialMiddle(bool atPartialMiddle);
+	bool GetAtPartialMiddle();
 	void SetAtStepIn(bool atStepIn);
 	bool GetAtStepIn();
-	CvPlot* GetAnkor();
+	set<CvPlot*>& GetAnkor();
 	void SetAnkor(CvPlot* ankor);
 	CvPlot* GetMicroGreedyExplorePlot(CvPlot* pPlot, TeamTypes eTeam,int iRange,  DomainTypes eDomainType);
 	map<CvPlot*,CvPlot*>& GetTargetLookUpTable();
 	void SetMiddleOfTargets();
 	int GetMiddleX() const;
 	int GetMiddleY() const;
+	void BuildExplorationTargets(CvPlot* closest, TeamTypes eTeam, bool second);
+	list<list<CvPlot*>*>& GetEndStack();
+	DirectionTypes GetNextUnitDirection();
+	set<CvPlot*>& GetVisited();
+	void SetUnrevealedSets();
+	vector<set<CvPlot*>>& GetUnrevealedSets();
+	void buildAdjacentUnrevealed(set<CvPlot*>& curSet, set<CvPlot*>& allViable, CvPlot* pPlot);
 #endif
 	FFastVector<int>& GetExplorationPlots();
 	FFastVector<int>& GetExplorationPlotRatings();
 	FFastVector<int>& GetGoodyHutPlots();
 	CvPlot* GetUnitTargetGoodyPlot(CvUnit* pUnit, CvPlot** ppkStepPlot = NULL);
 	void ClearUnitTargetGoodyStepPlot(CvUnit* pUnit);
-	void BuildExplorationTargets(CvPlot* closest, TeamTypes eTeam);
+	
 
 //JR_MODS 
 #if defined(JR_DLL)
@@ -320,15 +329,20 @@ private:
 	int m_JRNumberOfRevealed;
 	int m_JRNumberOfEndExplorePoints;
 	CvArea* m_BiggestOcean;
-	set<CvPlot*> m_ExplorationTargets;
+	vector<CvPlot*> m_ExplorationTargets;
 	bool m_atEnd;
 	bool m_atMiddle;
+	bool m_atPartialMiddle;
 	bool m_atStepIn;
-	CvPlot* m_ankor;
+	set<CvPlot*> m_ankor;
 	map<CvPlot*,CvPlot*> m_TargetLookUpTable;
 	int m_MiddleX;
 	int m_MiddleY;
-	
+	list<list<CvPlot*>*> m_EndStack;
+	vector<DirectionTypes> m_UnitDirections;
+	int UnitDirectionCounter;
+	set<CvPlot*> m_visited;
+	vector<set<CvPlot*>> m_unrevealedSets;
 #endif
 	struct GoodyHutUnitAssignment
 	{
