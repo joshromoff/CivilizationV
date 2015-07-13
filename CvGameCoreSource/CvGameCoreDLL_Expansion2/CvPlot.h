@@ -647,10 +647,10 @@ public:
 		//otherwise ccw
 		return false;
 	}
-	static inline bool stackCombine(list<list<CvPlot*>*> stackOfStacks,list<CvPlot*>* curSet,vector<CvPlot*>& combined)
+	static inline bool stackCombine(list<list<CvPlot*>> stackOfStacks,list<CvPlot*> curSet,vector<CvPlot*>& combined)
 	{
 		//add starting set to combined vector
-		combined.insert(combined.end(),curSet->begin(),curSet->end());
+		combined.insert(combined.end(),curSet.begin(),curSet.end());
 		//we finished the loop 
 		if(combined.front() == combined.back() && combined.size() > 1)
 		{
@@ -659,11 +659,15 @@ public:
 
 		//need to try to find connector.
 		//we know that back connected to the start of another set.
-		list<list<CvPlot*>*>::iterator it;
+		list<list<CvPlot*>>::iterator it;
 		for(it = stackOfStacks.begin(); it != stackOfStacks.end(); it++)
 		{
+			if(*it == curSet)
+			{
+				continue;
+			}
 			//found connection
-			if((*it)->front() == combined.back())
+			if((*it).front() == combined.back())
 			{
 				//call stackCombine recursively
 				return stackCombine(stackOfStacks,*it,combined);

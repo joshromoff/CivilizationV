@@ -71,6 +71,16 @@ void CvHomelandAI::Reset()
 	m_CurrentBestMoveHighPriorityUnit = NULL;
 	m_iCurrentBestMoveUnitTurns = MAX_INT;
 	m_iCurrentBestMoveHighPriorityUnitTurns = MAX_INT;
+	m_amountOfTilesAtEnd = 0;
+	x1= 0;
+	y1= 0;
+	x2= 0;
+	y2= 0;
+	x3= 0;
+	y3= 0;
+	x4= 0;
+	y4= 0;
+	m_stackOfStacks.clear();
 }
 
 /// Serialization read
@@ -2120,7 +2130,19 @@ void CvHomelandAI::ExecuteFirstTurnSettlerMoves()
 
 #define PATH_PLAN_LAST
 typedef CvWeightedVector<CvPlot*, 100, true> WeightedPlotVector;
+void CvHomelandAI::GetEndStack(list<list<CvPlot*>>& stackOfStacks)
+{
+	FStaticVector< CvHomelandUnit, 64, true, c_eCiv5GameplayDLL >::iterator it;
+	for(it = m_CurrentMoveUnits.begin(); it != m_CurrentMoveUnits.end(); ++it)
+	{
+		UnitHandle pUnit = m_pPlayer->getUnit(it->GetID());
+		if(pUnit->GetEndStack().size() > 0)
+		{
+			stackOfStacks.push_back(pUnit->GetEndStack());
+		}
+	}
 
+}
 /// Moves units to explore the map
 void CvHomelandAI::ExecuteExplorerMoves()
 {
@@ -2414,9 +2436,14 @@ void CvHomelandAI::ExecuteExplorerMoves()
 					//first: the combined stack
 					//maybe shopuld also removes the successfully combined stacks.
 					vector<CvPlot*> bCombined;
+					//copy unit end stack
+					list<CvPlot*> curStack;
+					copy(pUnit->GetEndStack().begin(),pUnit->GetEndStack().end(),back_inserter(curStack));
 					//can only have combined at one spot
+					//list<list<CvPlot*>> stackOfStacks;
 					//so if it did, then we need to check if it was cw or ccw
-					if(CvPlot::stackCombine(pEconomicAI->GetEndStack(),&pUnit->GetEndStack(),bCombined))
+					//GetEndStack(stackOfStacks);
+					if(CvPlot::stackCombine(m_stackOfStacks,pUnit->GetEndStack(),bCombined))
 					{
 						//no longer at end, either middle or find end
 						pUnit->SetAtEnd(false);
@@ -2444,6 +2471,20 @@ void CvHomelandAI::ExecuteExplorerMoves()
 					else{
 						pUnit->SetAtMiddle(true);
 					}
+					//push back the stack, to store untill we finish the end perimeter
+					m_stackOfStacks.push_back(curStack);
+					if(m_stackOfStacks.size() == 2)
+					{
+						x1 = m_stackOfStacks.front().front()->getX();
+						y1 = m_stackOfStacks.front().front()->getY();
+						x2 = m_stackOfStacks.front().back()->getX();
+						y2 = m_stackOfStacks.front().back()->getY();
+						x3 = m_stackOfStacks.back().front()->getX();
+						y3 = m_stackOfStacks.back().front()->getY();
+						x4 = m_stackOfStacks.back().back()->getX();
+						y4 = m_stackOfStacks.back().back()->getY();
+					}
+					
 				}
 				//otherwise still at end, will add to stack later.
 			}
@@ -3221,7 +3262,7 @@ void CvHomelandAI::ExecuteExplorerMoves()
 							//pEconomicAI->UpdatePlots();
 							//set this plot as the ankor
 							//add stack to stack of stacks
-							pEconomicAI->GetEndStack().push_back(&pUnit->GetEndStack());
+							//pEconomicAI->GetEndStack().push_back(&pUnit->GetEndStack());
 							
 						}
 						else{
@@ -3236,7 +3277,7 @@ void CvHomelandAI::ExecuteExplorerMoves()
 				default:
 					break;
 			}
-			log << GC.getGame().getElapsedGameTurns() << "," << pEconomicAI->GetJRNumberOfRevealed() << "," << (float)pEconomicAI->GetJRNumberOfRevealed()/(float)GC.getMap().getLandPlots()<<","<<pEconomicAI->GetExplorationTargets().size() << ","<< pEconomicAI->GetAtMiddle() << endl;
+			log << GC.getGame().getElapsedGameTurns() << "," << pEconomicAI->GetJRNumberOfRevealed() << "," << (float)pEconomicAI->GetJRNumberOfRevealed()/(float)GC.getMap().getLandPlots()<<","<<pEconomicAI->GetExplorationTargets().size() << ","<< pEconomicAI->GetAtMiddle() << "," << x1 << "," << y1 << "," <<  x2 << ","<< y2 << ","<<x3 << ","<< y3 << ","<<x4 << ","<< y4 << ","<< endl;
 			log.close();
 #endif
 			pUnit->PushMission(CvTypes::getMISSION_MOVE_TO(), pBestPlot->getX(), pBestPlot->getY(), MOVE_TERRITORY_NO_ENEMY | MOVE_MAXIMIZE_EXPLORE | MOVE_UNITS_IGNORE_DANGER, false, false, MISSIONAI_EXPLORE, pBestPlot);

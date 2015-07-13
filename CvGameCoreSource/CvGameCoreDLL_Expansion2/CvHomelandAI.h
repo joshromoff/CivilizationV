@@ -204,6 +204,18 @@ public:
 	template <typename T>
 	string to_string(T value);
 	bool findEnd(CvUnit* pUnit, CvPlot* pBestPlot, bool lookingForPerimeter, CvEconomicAI* pEconomicAI);
+	void GetEndStack(list<list<CvPlot*>>& stackOfStacks);
+	int m_amountOfTilesAtEnd;
+	int x1;
+	int y1;
+	int x2;
+	int y2;
+	int x3;
+	int y3;
+	int x4;
+	int y4;
+	list<list<CvPlot*>> m_stackOfStacks;
+
 #endif
 	// Serialization routines
 	void Read(FDataStream& kStream);
@@ -347,6 +359,8 @@ private:
 	int m_iDefensiveMoveTurns;
 	int m_iUpgradeMoveTurns;
 	double m_fFlavorDampening;
+
+
 };
 
 namespace HomelandAIHelpers

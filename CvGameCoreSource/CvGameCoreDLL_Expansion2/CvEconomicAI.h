@@ -343,6 +343,7 @@ private:
 	int UnitDirectionCounter;
 	set<CvPlot*> m_visited;
 	vector<set<CvPlot*>> m_unrevealedSets;
+	
 #endif
 	struct GoodyHutUnitAssignment
 	{
