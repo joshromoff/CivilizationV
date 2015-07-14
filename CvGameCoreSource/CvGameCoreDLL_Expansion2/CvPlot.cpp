@@ -1386,8 +1386,17 @@ bool CvPlot::comparePlots(CvUnit* pUnit, CvEconomicAI* pEconomicAI, CvPlot* plot
 	}
 	
 	//returns lower iterator
-	vector<CvPlot*>::iterator it1 = find(pEconomicAI->GetExplorationTargets().begin(),pEconomicAI->GetExplorationTargets().end(),plot1);
-	vector<CvPlot*>::iterator it2 = find(pEconomicAI->GetExplorationTargets().begin(),pEconomicAI->GetExplorationTargets().end(),plot2);
+	vector<CvPlot*>::iterator it1 = find(pUnit->GetExplorationTargets().begin(),pUnit->GetExplorationTargets().end(),plot1);
+	vector<CvPlot*>::iterator it2 = find(pUnit->GetExplorationTargets().begin(),pUnit->GetExplorationTargets().end(),plot2);
+	//if the first one isnt in targets and the second one is
+	if(it1 == pUnit->GetExplorationTargets().end() && it2 != pUnit->GetExplorationTargets().end())
+	{
+		return true;
+	}
+	if(it2 == pUnit->GetExplorationTargets().end() && it1 != pUnit->GetExplorationTargets().end())
+	{
+		return false;
+	}
 	return it2 < it1;
 
 }

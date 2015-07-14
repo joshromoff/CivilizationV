@@ -181,7 +181,7 @@ public:
 	int               GetJRNumberOfRevealed();
 	int               GetJRNumberOfEndExplorePoints();
 	vector<CvPlot*>&      GetExplorationTargets();
-	void              SetExplorationTargets(bool perimeter, TeamTypes eTeam, CvPlot* closest);
+	void              SetExplorationTargets(bool perimeter, TeamTypes eTeam, CvPlot* closest,vector<CvPlot*>& unitSet);
 	void SetAtEnd(bool atEnd);
 	bool GetAtEnd();
 	void SetAtMiddle(bool atMiddle);
@@ -197,13 +197,14 @@ public:
 	void SetMiddleOfTargets();
 	int GetMiddleX() const;
 	int GetMiddleY() const;
-	void BuildExplorationTargets(CvPlot* closest, TeamTypes eTeam, bool second);
+	void BuildExplorationTargets(CvPlot* closest, TeamTypes eTeam, vector<CvPlot*>& unitSet);
 	list<list<CvPlot*>*>& GetEndStack();
 	DirectionTypes GetNextUnitDirection();
 	set<CvPlot*>& GetVisited();
 	void SetUnrevealedSets();
 	vector<set<CvPlot*>>& GetUnrevealedSets();
 	void buildAdjacentUnrevealed(set<CvPlot*>& curSet, set<CvPlot*>& allViable, CvPlot* pPlot);
+	void updateUnitTargets(vector<CvPlot*>& unitSet);
 #endif
 	FFastVector<int>& GetExplorationPlots();
 	FFastVector<int>& GetExplorationPlotRatings();

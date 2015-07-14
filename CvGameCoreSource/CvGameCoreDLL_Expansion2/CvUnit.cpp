@@ -930,6 +930,7 @@ void CvUnit::reset(int iID, UnitTypes eUnit, PlayerTypes eOwner, bool bConstruct
 			m_initialOrientation = GET_PLAYER(getOwner()).GetEconomicAI()->GetNextUnitDirection();
 		}
 	}*/
+	m_ExplorationTargets.clear();
 	
 #endif
 	m_kLastPath.clear();
@@ -18558,6 +18559,10 @@ bool CvUnit::IsAutomated() const
 
 //  --------------------------------------------------------------------------------
 #if defined(JR_MODS_H)
+vector<CvPlot*>& CvUnit::GetExplorationTargets()
+{
+	return m_ExplorationTargets;
+}
 void CvUnit::SetAtEnd(bool atEnd)
 {
 	m_atEnd = atEnd;

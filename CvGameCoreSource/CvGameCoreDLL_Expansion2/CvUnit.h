@@ -152,6 +152,7 @@ public:
 	bool GetAtEnd();
 	void SetInitialOrientation(DirectionTypes eDirection);
 	DirectionTypes GetInitialOrientation();
+	vector<CvPlot*>&      GetExplorationTargets();
 	
 	
 #endif
@@ -1480,7 +1481,7 @@ protected:
 	list<CvPlot*> m_EndStack;
 	bool m_atMiddle;
 	bool m_atEnd;
-	
+	vector<CvPlot*> m_ExplorationTargets;
 #endif
 	FAutoVariable<AutomateTypes, CvUnit> m_eAutomateType;
 	FAutoVariable<UnitAITypes, CvUnit> m_eUnitAIType;
