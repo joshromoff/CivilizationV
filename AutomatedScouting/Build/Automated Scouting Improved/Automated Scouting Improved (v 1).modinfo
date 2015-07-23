@@ -24,11 +24,11 @@
   <Files>
     <File md5="0D0DB28AFA7356850080D1E220E75745" import="1">AssignStartingPlots.lua</File>
     <File md5="FA582D4720A4A144F53413B6118F1CAB" import="0">CIV5Worlds.xml</File>
-    <File md5="2D506FCEFDD4BAEAD92181B8F1E9709C" import="1">CvGameCore_Expansion2.dll</File>
+    <File md5="5114C82081264C3CFA882F19531ADF1D" import="1">CvGameCore_Expansion2.dll</File>
     <File md5="24804D9FE8AF3E0C16DC1F9E24926C8A" import="0">NoHappiness.xml</File>
     <File md5="E077583E7B3C234F0BB5A34C871F36D6" import="0">NoSettler.xml</File>
     <File md5="CBB12F5538952579356B63E087578BB9" import="1">Test_UnitPanelHook.lua</File>
-    <File md5="7C387279D88FE3F7550AF12733DA1C49" import="0">StartingScout.xml</File>
+    <File md5="DAA49137131C9D8E4236942817DB2BED" import="0">StartingScout.xml</File>
     <File md5="0F4C2F6003AF659BB3538FDD338543F5" import="1">UnitPanel.lua</File>
     <File md5="52B4AECC69AB4B8F8987163C38E76888" import="1">WhosWinningPopup.lua</File>
   </Files>
